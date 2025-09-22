@@ -1,3 +1,6 @@
 venv
 __pycache__
 p1-2025-26.pdf
+.vscode
+users.txt
+user_libraries

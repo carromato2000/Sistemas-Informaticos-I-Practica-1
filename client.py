@@ -11,7 +11,7 @@ input_pswd=input("Enter your password: ")
 username= {"username": input_user}
 data= {"password": input_pswd}
 
-response=requests.post(f"{url_user}create_user/{input_user}", json=data)
+response=requests.post(f"{url_user}/user/create/{input_user}", json=data)
 
 if response.status_code == 200:
     user_data=response.json()
