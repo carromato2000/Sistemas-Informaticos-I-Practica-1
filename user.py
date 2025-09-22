@@ -2,7 +2,7 @@ from quart import Quart, jsonify, request
 
 import uuid
 
-
+secret_uuid=uuid.UUID(hex='00010203-0405-0607-0809-0a0b0c0d0e0f')
 app = Quart(__name__)
 
 
@@ -16,9 +16,9 @@ async def create_user(name):
         return jsonify({"error": "Could not open file"}), 500
     
     data=await request.get_json()
-    
+
     UID= uuid.uuid4()
-    secret_uuid=uuid.UUID(str(name))
+    
     hash=uuid.uuid5(secret_uuid,str(UID))
     
     new_user ={

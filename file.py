@@ -1,14 +1,14 @@
 from quart import Quart, jsonify
+import uuid
 
-
-
+secret_uuid=uuid.UUID(hex='00010203-0405-0607-0809-0a0b0c0d0e0f')
 app = Quart(__name__)
-file=open("users.txt", "w")
 
 
-@app.route('/files/{name}', methods=['GET'])
 
-async def files(name):
+@app.route('/files/<UID>', methods=['GET'])
+
+async def files(id):
     
     file=open("users.txt", "r")
     if not file:
@@ -18,9 +18,9 @@ async def files(name):
         line = file.readline()
         if not line:
             break
-        if name in line:
+        if id in line:
            parts=line.split(",")
-           return jsonify({"name": parts[0], "id": parts[1], "hash": parts[2]})
+           return jsonify({"name": parts[0], "psswd":parts[1], "id": parts[2], "hash": parts[3]})
        
     file.close()
     ret={
