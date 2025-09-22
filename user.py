@@ -8,9 +8,11 @@ app = Quart(__name__)
 
 
 
-@app.route('/user/create/<name>', methods=['POST'])
+@app.route('/user/create', methods=['POST'])
 
-async def create_user(name):
+async def create_user():
+    data=await request.get_json()
+    name=data.get("name")
     try:
         file=open("users.txt", "r")
         for line in file:   # Si el usuario ya existe, no se puede crear
@@ -23,15 +25,12 @@ async def create_user(name):
         pass
     file = open("users.txt", "a")
     
-    data=await request.get_json()
-
-    UID= uuid.uuid4()
-    
+    UID=uuid.uuid4()
     hash=uuid.uuid5(secret_uuid,str(UID))
     
     new_user ={
-        "name": str(name),
-        "psswd":str(data.get("password")),
+        "name": name,
+        "psswd":str(data.get("psswd")),
         "id": str(UID),
         "hash": str(hash)
     }
@@ -39,9 +38,23 @@ async def create_user(name):
     file.close()
     return jsonify(new_user)
 
-@app.route('/user/login/<name>', methods=['POST'])
+@app.route('/user/login/<user_id>', methods=['POST'])
 async def get_user(user_id):
-    return
+    data = await request.get_json()
+    try:
+        file=open("users.txt", "r")
+        for line in file:
+            user = json.loads(line)
+            if user["id"] == user_id:
+                file.close()
+                if user["psswd"] != data.get("psswd"):
+                    return jsonify({"error": "incorrect password"}), 404
+                else:
+                    return jsonify(user)
+        file.close()
+        return jsonify({"error": "User not found"}), 404
+    except FileNotFoundError:
+        return jsonify({"error": "User not found"}), 404
 
 if __name__ == '__main__':
     app.run(host='localhost', port=5050)

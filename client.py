@@ -8,10 +8,9 @@ url_file ="http://localhost:5051/"
 input_user=input("Enter your name: ")
 input_pswd=input("Enter your password: ")
 
-username= {"username": input_user}
-data= {"password": input_pswd}
+data= {"name": input_user,"psswd": input_pswd}
 
-response=requests.post(f"{url_user}/user/create/{input_user}", json=data)
+response=requests.post(f"{url_user}/user/create", json=data)
 
 if response.status_code == 200:
     user_data=response.json()
