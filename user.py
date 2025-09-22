@@ -26,30 +26,35 @@ async def create_user():
     file = open("users.txt", "a")
     
     UID=uuid.uuid4()
-    hash=uuid.uuid5(secret_uuid,str(UID))
+    token=uuid.uuid5(secret_uuid,str(UID))
     
     new_user ={
         "name": name,
         "psswd":str(data.get("psswd")),
         "id": str(UID),
-        "hash": str(hash)
+        "token": str(token)
     }
     file.write(json.dumps(new_user)+"\n")
     file.close()
+    del new_user["psswd"]  # No se devuelve la contraseña
+    del new_user["name"]  # No se devuelve el nombre
     return jsonify(new_user)
 
-@app.route('/user/login/<user_id>', methods=['POST'])
-async def get_user(user_id):
+@app.route('/user/login', methods=['POST'])
+async def get_user():
     data = await request.get_json()
+    name = data.get("name")
     try:
         file=open("users.txt", "r")
         for line in file:
             user = json.loads(line)
-            if user["id"] == user_id:
+            if user["name"] == name:
                 file.close()
                 if user["psswd"] != data.get("psswd"):
                     return jsonify({"error": "incorrect password"}), 404
                 else:
+                    del user["psswd"]  # No se devuelve la contraseña
+                    del user["name"]  # No se devuelve el nombre
                     return jsonify(user)
         file.close()
         return jsonify({"error": "User not found"}), 404
