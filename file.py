@@ -15,7 +15,7 @@ async def get_file(UID, filename):
         return jsonify({"error": "Invalid token"}), 403
         
     try:
-        file = open(f"files/{UID}/{filename}", "r")
+        file = open(f"file/{UID}/{filename}", "r")
     except FileNotFoundError:
         return jsonify({"error": "File not found"}), 404
     
