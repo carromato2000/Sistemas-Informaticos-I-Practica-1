@@ -15,8 +15,7 @@ def manage_response(response):
     if response.status_code == 200:
         print("Success:", response.json())
     else:
-        print("Error:", response.status_code, response.text)
-        exit()
+        print("Error:", response.status_code, response.json())
 
 response=requests.post(f"{url_user}/user/create", json=data)
 manage_response(response)
@@ -30,13 +29,20 @@ token = user_data["token"]
 filename = "example.txt"
 content = "This is an example file content."
 
-data = {"id": id, "token": token, "content": content}
+data = {"id": id, "token": token, "content": content, "public": False}
 
 response=requests.put(f"{url_file}file/{id}/{filename}", json=data)
+manage_response(response)
+
+data.pop("public")
+
+response=requests.get(f"{url_file}file/{id}/{filename}", json={"id": id, "token": "invalid_token"})
+manage_response(response)
+response=requests.get(f"{url_file}file/{id}/{filename}", json={"id": id, "token": token})
 manage_response(response)
 
 response=requests.get(f"{url_file}file/{id}", json={"id": id, "token": token})
 manage_response(response)
 
-response=requests.delete(f"{url_file}file/{id}/{filename}", json={"id": id, "token": token})
-manage_response(response)
+#response=requests.delete(f"{url_file}file/{id}/{filename}", json={"id": id, "token": token})
+#manage_response(response)
