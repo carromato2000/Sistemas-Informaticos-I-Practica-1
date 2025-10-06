@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  user:
+    ports:
+      -"5050:5050"
+  file:
+    ports:
+      -"5051:5051"
+
+
+    
