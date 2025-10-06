@@ -1,6 +1,11 @@
+
 from quart import Quart, jsonify, request
 import uuid
 import os
+import hashlib
+from datetime import datetime, timedelta
+
+
 
 secret_uuid=uuid.UUID(hex='00010203-0405-0607-0809-0a0b0c0d0e0f')
 app = Quart(__name__)
@@ -64,6 +69,42 @@ async def share_file(UID,filename):
     data = await request.get_json()
     if not check_token(data.get("id"), data.get("token")):
         return jsonify({"error": "Invalid token"}), 403
+    now = datetime.now()
+    one_minute_later = now + timedelta(minutes=1)
+    
+    time= one_minute_later.strftime("%Y-%m-%d %H:%M:%S")
+    
+    print(time)
+    
+    hash=hashlib.sha1(str(secret_uuid).encode()).hexdigest()
+    
+    
+    share_token= str(data.get("id"))+"."+ filename +"."+ time +"."+ hash
+    
+    return jsonify({"share_token": share_token})
+
+@app.route('/share/<share_token>', methods=['GET'])
+async def access_shared_file(share_token):
+    if not share_token:
+        return jsonify({"error": "Share token is required"}), 400
+    try:
+        uid, filename, expiry_time_str, token_hash = share_token.split('.')
+    except ValueError:
+        return jsonify({"error": "Invalid share token format"}), 400
+    try:
+        expiry_time = datetime.strptime(expiry_time_str, "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        return jsonify({"error": "Invalid expiry time format"}), 400    
+    if datetime.now() > expiry_time:
+        return jsonify({"error": "Share token has expired"}), 400
+    hash_expected=hashlib.sha1(str(secret_uuid).encode()).hexdigest()
+    if token_hash != hash_expected:
+        return jsonify({"error": "Invalid share token hash"}), 400
+    
+    file=open(f"file/{uid}/{filename}", "r")
+    content=file.read()
+    file.close()
+    return jsonify({"content": content})
     
 
     
