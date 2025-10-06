@@ -119,7 +119,7 @@ async def access_shared_file(share_token):
     
     
 if __name__ == '__main__':
-    app.run(host='localhost', port=5051)
+    app.run(host='0.0.0.0', port=5051)
     
     
     
