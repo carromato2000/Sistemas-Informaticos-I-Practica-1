@@ -16,13 +16,16 @@ def check_token(uid, token):
 @app.route('/file/<UID>/<filename>', methods=['GET'])
 async def get_file(UID, filename):
     data=await request.get_json()
-    if not check_token(data.get("id"), data.get("token")):
-        return jsonify({"error": "Invalid token"}), 403
-        
+    token = data.get("token")
+
     try:
         file = open(f"file/{UID}/{filename}", "r")
     except FileNotFoundError:
         return jsonify({"error": "File not found"}), 404
+    public = file.readline() == "PUBLIC\n"
+    if not public and not check_token(UID, token):
+        file.close()
+        return jsonify({"error": "File is private"}), 403
     
     content = file.read()
     file.close()
@@ -31,13 +34,19 @@ async def get_file(UID, filename):
 @app.route('/file/<UID>/<filename>', methods=['PUT'])
 async def put_file(UID, filename):
     data=await request.get_json()
-    if not check_token(data.get("id"), data.get("token")):
+    if not check_token(UID, data.get("token")):
         return jsonify({"error": "Invalid token " + data.get("token")}), 403
+    
+    public = data.get("public", False)
     
     # Crear el directorio si no existe
     os.makedirs(f"file/{UID}", exist_ok=True)
     
     file = open(f"file/{UID}/{filename}", "w")
+    if public:
+        file.write("PUBLIC\n")
+    else:
+        file.write("PRIVATE\n")
     file.write(data.get("content", ""))
     file.close()
     return jsonify({"status": "File saved successfully"})
