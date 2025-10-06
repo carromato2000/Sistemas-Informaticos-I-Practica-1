@@ -3,4 +3,7 @@ __pycache__
 p1-2025-26.pdf
 .vscode
 users.txt
-file
+file/*
+!file/Dockerfile
+!file/file.py
+!file/requirements.txt
