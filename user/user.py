@@ -31,13 +31,13 @@ async def create_user():
     new_user ={
         "name": name,
         "psswd":str(data.get("psswd")),
-        "id": str(UID),
-        "token": str(token)
+        "id": str(UID)
     }
     file.write(json.dumps(new_user)+"\n")
     file.close()
     del new_user["psswd"]  # No se devuelve la contraseña
     del new_user["name"]  # No se devuelve el nombre
+    new_user["token"] = str(token)
     return jsonify(new_user)
 
 @app.route('/user/login', methods=['POST'])
@@ -55,6 +55,7 @@ async def get_user():
                 else:
                     del user["psswd"]  # No se devuelve la contraseña
                     del user["name"]  # No se devuelve el nombre
+                    user["token"] = str(uuid.uuid5(secret_uuid, user["id"]))
                     return jsonify(user)
         file.close()
         return jsonify({"error": "User not found"}), 404

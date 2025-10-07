@@ -11,7 +11,7 @@ En esta práctica hemos desarrollado una aplicación distribuida basada en micro
 
 La logica de este microservicio es muy sencilla. Hay dos rutas "/users/create" y "/users/login", a ambas se accede con el comando POST, y los datos del usuario (nombre y contraseña) han de ir en el cuerpo de la petición en formato JSON. 
 
-Si se accede de este modo a cualquiera de estas rutas el servicio devolverá el token de acceso o un codigo de error.
+Si se accede de este modo a cualquiera de estas rutas el servicio devolverá el id de usuario y el token de acceso o un codigo de error.
 
 El codigo de error puede devolverse porque el usuario ya existiera, si se esta creando un usuario, o porque la contraseña no fuera correcta, si se esta iniciando sesión.
 
