@@ -28,20 +28,21 @@ id = user_data["id"]
 token = user_data["token"]
 filename = "example.txt"
 content = "This is an example file content."
+headers = {"token": token}
 
-data = {"id": id, "token": token, "content": content, "public": False}
+data = {"content": content, "public": False}
 
-response=requests.put(f"{url_file}file/{id}/{filename}", json=data)
+response=requests.put(f"{url_file}file/{id}/{filename}", json=data, headers=headers)
 manage_response(response)
 
 data.pop("public")
 
-response=requests.get(f"{url_file}file/{id}/{filename}", json={"id": id, "token": "invalid_token"})
+response=requests.get(f"{url_file}file/{id}/{filename}", headers={"token": "invalid_token"}, json=data)
 manage_response(response)
-response=requests.get(f"{url_file}file/{id}/{filename}", json={"id": id, "token": token})
+response=requests.get(f"{url_file}file/{id}/{filename}", headers=headers, json=data)
 manage_response(response)
 
-response=requests.get(f"{url_file}file/{id}", json={"id": id, "token": token})
+response=requests.get(f"{url_file}file/{id}", json=data, headers= headers)
 manage_response(response)
 
 #response=requests.delete(f"{url_file}file/{id}/{filename}", json={"id": id, "token": token})

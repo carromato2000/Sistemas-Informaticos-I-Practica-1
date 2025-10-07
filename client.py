@@ -57,11 +57,13 @@ elif choice =='2':
         if file_choice not in ['1','2','3','4', '5']:
             print("Invalid option. Exiting.")
             exit()
+
+        headers = {"token": user_data.get("token")}
         
         if file_choice =='1':
             filename=input("Enter the filename to read: ")
             
-            response=requests.get(f"{url_file}/file/{user_data.get('id')}/{filename}", json=user_data)
+            response=requests.get(f"{url_file}/file/{user_data.get('id')}/{filename}", headers=headers)
             if response.status_code == 200:
                 file_content=response.json()
                 print("File content:")
@@ -70,7 +72,7 @@ elif choice =='2':
                 print("Error reading file:", response.status_code, response.text)
                 exit()
         elif file_choice =='2':
-            response=requests.get(f"{url_file}/file/{user_data.get('id')}", json=user_data)
+            response=requests.get(f"{url_file}/file/{user_data.get('id')}", headers=headers)
             if response.status_code == 200:
                 files_list=response.json()
                 print("Files list:")
@@ -81,9 +83,14 @@ elif choice =='2':
         elif file_choice =='3':
             filename=input("Enter the filename to edit/create: ")
             content=input("Enter the content to write in the file: ")
-            user_data['content']=content
+            public_choice=input("Should the file be public? (yes/no): ")
+            public = public_choice.lower() == 'yes'
+            if public:
+                content={"public": True, "content": content}
+            else:
+                content={"public": False, "content": content}
             
-            response=requests.put(f"{url_file}/file/{user_data.get('id')}/{filename}", json=user_data)
+            response=requests.put(f"{url_file}/file/{user_data.get('id')}/{filename}", headers=headers, json = content)
             if response.status_code == 200:
                 result=response.json()
                 print("File edited/created successfully:")
@@ -94,7 +101,7 @@ elif choice =='2':
         elif file_choice =='4':
             filename=input("Enter the filename to delete: ")
             
-            response=requests.delete(f"{url_file}/file/{user_data.get('id')}/{filename}", json=user_data)
+            response=requests.delete(f"{url_file}/file/{user_data.get('id')}/{filename}", headers=headers)
             if response.status_code == 200:
                 result=response.json()
                 print("File deleted successfully:")
@@ -105,7 +112,7 @@ elif choice =='2':
         elif file_choice =='5':
             filename=input("Enter the filename to share: ")
             
-            response=requests.post(f"{url_file}/file/{user_data.get('id')}/{filename}/share", json=user_data)
+            response=requests.post(f"{url_file}/file/{user_data.get('id')}/{filename}/share", headers=headers)
             if response.status_code == 200:
                 share_token=response.json()
                 print("File shared successfully. Share token:")

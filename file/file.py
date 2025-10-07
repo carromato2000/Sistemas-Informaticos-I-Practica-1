@@ -15,8 +15,7 @@ def check_token(uid, token):
 
 @app.route('/file/<UID>/<filename>', methods=['GET'])
 async def get_file(UID, filename):
-    data=await request.get_json()
-    token = data.get("token")
+    token = request.headers.get("token")
 
     try:
         file = open(f"{UID}/{filename}", "r")
@@ -34,8 +33,9 @@ async def get_file(UID, filename):
 @app.route('/file/<UID>/<filename>', methods=['PUT'])
 async def put_file(UID, filename):
     data=await request.get_json()
-    if not check_token(UID, data.get("token")):
-        return jsonify({"error": "Invalid token " + data.get("token")}), 403
+    token = request.headers.get("token")
+    if not check_token(UID, token):
+        return jsonify({"error": "Invalid token"}), 403
     
     public = data.get("public", False)
     
@@ -53,8 +53,8 @@ async def put_file(UID, filename):
 
 @app.route('/file/<UID>/<filename>', methods=['DELETE'])
 async def delete_file(UID, filename):
-    data=await request.get_json()
-    if not check_token(data.get("id"), data.get("token")):
+    token = request.headers.get("token")
+    if not check_token(UID, token):
         return jsonify({"error": "Invalid token"}), 403
     try:
         os.remove(f"{UID}/{filename}")
@@ -65,7 +65,8 @@ async def delete_file(UID, filename):
 @app.route('/file/<UID>', methods=['GET'])
 async def list_files(UID):
     data=await request.get_json()
-    if not check_token(data.get("id"), data.get("token")):
+    token = request.headers.get("token")
+    if not check_token(UID, token):
         return jsonify({"error": "Invalid token"}), 403
     try:
         files = os.listdir(f"{UID}/")
@@ -75,8 +76,8 @@ async def list_files(UID):
     
 @app.route('/file/<UID>/<filename>/share', methods=['POST'])
 async def share_file(UID,filename):
-    data = await request.get_json()
-    if not check_token(data.get("id"), data.get("token")):
+    token = request.headers.get("token")
+    if not check_token(UID, token):
         return jsonify({"error": "Invalid token"}), 403
     now = datetime.now()
     one_minute_later = now + timedelta(minutes=1)
@@ -88,7 +89,7 @@ async def share_file(UID,filename):
     hash=hashlib.sha1(str(secret_uuid).encode()).hexdigest()
     
     
-    share_token= str(data.get("id"))+"."+ filename +"."+ time +"."+ hash
+    share_token= str(UID)+"."+ filename +"."+ time +"."+ hash
     
     return jsonify({"share_token": share_token})
 
