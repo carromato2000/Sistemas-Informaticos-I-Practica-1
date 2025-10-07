@@ -5,8 +5,6 @@ import os
 import hashlib
 from datetime import datetime, timedelta
 
-
-
 secret_uuid=uuid.UUID(hex='00010203-0405-0607-0809-0a0b0c0d0e0f')
 app = Quart(__name__)
 
@@ -83,11 +81,8 @@ async def share_file(UID,filename):
     one_minute_later = now + timedelta(minutes=1)
     
     time= one_minute_later.strftime("%Y-%m-%d %H:%M:%S")
-    
-    print(time)
-    
+
     hash=hashlib.sha1(str(secret_uuid).encode()).hexdigest()
-    
     
     share_token= str(UID)+"."+ filename +"."+ time +"."+ hash
     
@@ -98,7 +93,8 @@ async def access_shared_file(share_token):
     if not share_token:
         return jsonify({"error": "Share token is required"}), 400
     try:
-        uid, filename, expiry_time_str, token_hash = share_token.split('.')
+        uid, filename, extension, expiry_time_str, token_hash = share_token.split('.')
+        filename = filename + '.' + extension
     except ValueError:
         return jsonify({"error": "Invalid share token format"}), 400
     try:
