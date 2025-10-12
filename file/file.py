@@ -107,7 +107,7 @@ async def access_shared_file(share_token):
     if token_hash != hash_expected:
         return jsonify({"error": "Invalid share token hash"}), 400
     
-    file=open(f"file/{uid}/{filename}", "r")
+    file=open(f"{uid}/{filename}", "r")
     content=file.read()
     file.close()
     return jsonify({"content": content})
