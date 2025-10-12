@@ -1,142 +1,88 @@
 import requests
 import json
 from hashlib import sha1
+import uuid
 
 url_user ="http://localhost:5050/"
 url_file ="http://localhost:5051/"
 
-print("Client Application")
-print("1. Create User")
-print("2. Login User")
-print("3. Get Shared File")
-choice=input("Select an option (1, 2 or 3): ")
+name = "alice"
+psswd = "password123"
 
-if choice not in ['1','2','3']:
-    print("Invalid option. Exiting.")
-    exit()
+data= {"name": name,"psswd": psswd}
 
-elif choice =='1':
-
-    input_user=input("Enter your name: ")
-    input_pswd=input("Enter your password: ")
-
-    data= {"name": input_user,"psswd": input_pswd}
-
-    response=requests.post(f"{url_user}/user/create", json=data)
-
+def manage_response(response):
     if response.status_code == 200:
-        user_data=response.json()
-        print("User created successfully:")
-        print(json.dumps(user_data, indent=4))
+        print("Success:", response.json())
     else:
-        print("Error creating user:", response.status_code, response.text)
-        exit()
+        print("Error:", response.status_code, response.json())
 
-elif choice =='2':
+#Create user repeated
+response=requests.post(f"{url_user}/user/create", json=data)
+manage_response(response)
 
-    input_user=input("Enter your name: ")
-    input_pswd=input("Enter your password: ")
+#Name empty
+response=requests.post(f"{url_user}/user/create", json={"name": "", "psswd": psswd})
+manage_response(response)
 
-    data= {"name": input_user,"psswd": input_pswd}
+#Password empty
+response=requests.post(f"{url_user}/user/create", json={"name": "david", "psswd": ""})
+manage_response(response)
 
-    response=requests.post(f"{url_user}/user/login", json=data)
+#Incorrect psswd
+response=requests.post(f"{url_user}/user/login", json={"name": "david", "psswd": "1235"})
+manage_response(response)
 
-    if response.status_code == 200:
-        user_data=response.json()
-        print("User logged in successfully:")
-        print(json.dumps(user_data, indent=4))
-        
-        ##Acceso a ficheros
-        print("\nFile Operations")
-        print("1. Read File")
-        print("2. List Files")
-        print("3. Edit/Create File")
-        print("4. Delete File")
-        print("5. Share File")
-        file_choice=input("Select an option (1, 2, 3, 4 or 5): ")
-        if file_choice not in ['1','2','3','4', '5']:
-            print("Invalid option. Exiting.")
-            exit()
+#Login success
+response=requests.post(f"{url_user}/user/login", json={"name": name, "psswd": psswd})
+manage_response(response)
 
-        headers = {"token": user_data.get("token")}
-        
-        if file_choice =='1':
-            filename=input("Enter the filename to read: ")
-            
-            response=requests.get(f"{url_file}/file/{user_data.get('id')}/{filename}", headers=headers)
-            if response.status_code == 200:
-                file_content=response.json()
-                print("File content:")
-                print(json.dumps(file_content, indent=4))
-            else:
-                print("Error reading file:", response.status_code, response.text)
-                exit()
-        elif file_choice =='2':
-            response=requests.get(f"{url_file}/file/{user_data.get('id')}", headers=headers)
-            if response.status_code == 200:
-                files_list=response.json()
-                print("Files list:")
-                print(json.dumps(files_list, indent=4))
-            else:
-                print("Error listing files:", response.status_code, response.text)
-                exit()
-        elif file_choice =='3':
-            filename=input("Enter the filename to edit/create: ")
-            content=input("Enter the content to write in the file: ")
-            public_choice=input("Should the file be public? (yes/no): ")
-            public = public_choice.lower() == 'yes'
-            if public:
-                content={"public": True, "content": content}
-            else:
-                content={"public": False, "content": content}
-            
-            response=requests.put(f"{url_file}/file/{user_data.get('id')}/{filename}", headers=headers, json = content)
-            if response.status_code == 200:
-                result=response.json()
-                print("File edited/created successfully:")
-                print(json.dumps(result, indent=4))
-            else:
-                print("Error editing/creating file:", response.status_code, response.text)
-                exit()
-        elif file_choice =='4':
-            filename=input("Enter the filename to delete: ")
-            
-            response=requests.delete(f"{url_file}/file/{user_data.get('id')}/{filename}", headers=headers)
-            if response.status_code == 200:
-                result=response.json()
-                print("File deleted successfully:")
-                print(json.dumps(result, indent=4))
-            else:
-                print("Error deleting file:", response.status_code, response.text)
-                exit()
-        elif file_choice =='5':
-            filename=input("Enter the filename to share: ")
-            
-            response=requests.post(f"{url_file}/file/{user_data.get('id')}/{filename}/share", headers=headers)
-            if response.status_code == 200:
-                share_token=response.json()
-                print("File shared successfully. Share token:")
-                print(json.dumps(share_token, indent=4))
-            else:
-                print("Error sharing file:", response.status_code, response.text)
-                exit()
-                
-    else:
-        print("Error logging in:", response.status_code, response.text)
-        exit()
-        
-elif choice =='3':
-    share_token=input("Enter the share token: ")
-    
-    
-    response=requests.get(f"{url_file}/share/{share_token}")
-    if response.status_code == 200:
-        file_content=response.json()
-        print("File content:")
-        print(json.dumps(file_content, indent=4))
-    else:
-        print("Error reading shared file:", response.status_code, response.text)
-        exit()
-        
-        
-        
+#User and file example data
+user_data=response.json()
+id = user_data["id"]
+token = user_data["token"]
+filename = "example.txt"
+content = "This is an example file content."
+headers = {"token": token}
+
+data = {"content": content, "public": False}
+
+#Create file
+response=requests.put(f"{url_file}file/{id}/{filename}", json=data, headers=headers)
+manage_response(response)
+
+data.pop("public")
+
+#Failed access to private file
+response=requests.get(f"{url_file}file/{id}/{filename}", headers={"token": "invalid_token"}, json=data)
+manage_response(response)
+
+#Success access to private file
+response=requests.get(f"{url_file}file/{id}/{filename}", headers=headers, json=data)
+manage_response(response)
+
+#Success access to list of files
+response=requests.get(f"{url_file}file/{id}", json=data, headers= headers)
+manage_response(response)
+
+#Delete file success
+response=requests.delete(f"{url_file}file/{id}/{filename}", headers=headers,json=data)
+manage_response(response)
+
+response=requests.get(f"{url_file}file/{id}", json=data, headers= headers)
+manage_response(response)
+
+response=requests.put(f"{url_file}file/{id}/{filename}", json=data, headers=headers)
+manage_response(response)
+response=requests.get(f"{url_file}file/{id}", json=data, headers= headers)
+manage_response(response)
+#Share
+response=requests.post(f"{url_file}file/{id}/{filename}/share", json=data, headers= headers)
+manage_response(response)
+
+user_data= response.json()
+share_token= user_data.get("share_token")
+
+response=requests.get(f"{url_file}/share/{share_token}")
+manage_response(response)
+

@@ -13,6 +13,12 @@ app = Quart(__name__)
 async def create_user():
     data=await request.get_json()
     name=data.get("name")
+    if not name:
+        return jsonify({"error": "Name data is empty"}), 404 
+
+    elif not data.get("psswd"):
+        return jsonify({"error": "Password data is empty"}), 404
+    
     try:
         file=open("users.txt", "r")
         for line in file:   # Si el usuario ya existe, no se puede crear
@@ -27,6 +33,7 @@ async def create_user():
     
     UID=uuid.uuid4()
     token=uuid.uuid5(secret_uuid,str(UID))
+    
     
     new_user ={
         "name": name,
