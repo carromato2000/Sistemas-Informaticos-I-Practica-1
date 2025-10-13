@@ -1,18 +1,12 @@
 CREATE TABLE peliculas(
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL,
-    director VARCHAR(255) FOREIGN KEY REFERENCES directores(nombre),
     anio INT NOT NULL,
     genero VARCHAR(255) NOT NULL,
     precio DECIMAL(10, 2) NOT NULL
 )
 
-CREATE TABLE directores(
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(255) NOT NULL,
-    fecha_nacimiento DATE NOT NULL,
-    fecha_defuncion DATE
-)
+
 
 CREATE TABLE repartos(
     pelicula_id INT FOREIGN KEY REFERENCES peliculas(id),

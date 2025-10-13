@@ -8,3 +8,4 @@ file/*
 !P1/file/.dockerignore
 !P1/file/file.py
 !P1/file/requirements.txt
+P2/db_data
