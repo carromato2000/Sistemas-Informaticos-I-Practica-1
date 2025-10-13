@@ -38,7 +38,7 @@ CREATE TABLE valoraciones(
     pelicula INT FOREIGN KEY REFERENCES peliculas(id),
     PRIMARY KEY (usuario, pelicula),
     nota INT NOT NULL,
-    comentario TEXT,
+    comentario TEXT
 )
 
 CREATE TABLE carritos(
@@ -48,7 +48,9 @@ CREATE TABLE carritos(
 )
 CREATE TABLE pedidos(
     id SERIAL PRIMARY KEY,
-    usuario INT FOREIGN KEY REFERENCES usuarios(id)
+    usuario INT FOREIGN KEY REFERENCES usuarios(id),
+    fecha TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    estado VARCHAR(50) NOT NULL
 )
 
 CREATE TABLE pedidos_peliculas(
