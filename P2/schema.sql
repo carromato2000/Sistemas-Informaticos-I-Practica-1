@@ -23,7 +23,9 @@ CREATE TABLE repartos(
 
 CREATE TABLE actores(
     id SERIAL PRIMARY KEY,
-    nombre VARCHAR(255) NOT NULL
+    nombre VARCHAR(255) NOT NULL,
+    fecha_nacimiento DATE NOT NULL,
+    fecha_defuncion DATE
 )
 
 CREATE TABLE usuarios(
