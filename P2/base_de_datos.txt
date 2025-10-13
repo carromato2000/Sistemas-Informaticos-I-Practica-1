@@ -1,0 +1,60 @@
+PELICULAS
+ID: PK
+Nombre: Str
+Director: FK
+Precio: Int
+------
+Genero: Str
+Fecha: Date
+
+DIRECTORES
+ID: PK
+Nombre: Str
+------
+Fecha-nacimiento: Date
+Fecha-defunción: Date
+
+REPARTOS
+Pelicula: FK
+Actor: FK
+------
+ROL: Str
+
+ACTORES:
+ID:PK
+Nombre:str
+------
+Fecha-nacimiento: Date
+Fecha-defuncion: Date
+
+VALORACIONES
+Usuario: FK
+Pelicula: FK
+Nota: Int
+------
+Comentario: Str
+
+USUARIOS
+ID: PK
+Nombre: Str
+Contraseña: Str
+Saldo: Int
+
+CARRITOS
+Usuario: FK
+Pelicula: FK
+
+PEDIDOS
+ID: PK
+Usuario: FK
+--------
+Fecha: Date
+Estado: Enum
+
+PEDIDOS-PELICULAS
+Pedido: FK
+Pelicula: FK
+
+
+
+

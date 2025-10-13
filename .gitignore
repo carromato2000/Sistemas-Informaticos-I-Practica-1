@@ -1,10 +1,10 @@
-venv
+*/venv
 __pycache__
-p1-2025-26.pdf
+P1/p1-2025-26.pdf
 .vscode
 user/users.txt
 file/*
-!file/Dockerfile
-!file/.dockerignore
-!file/file.py
-!file/requirements.txt
+!P1/file/Dockerfile
+!P1/file/.dockerignore
+!P1/file/file.py
+!P1/file/requirements.txt
