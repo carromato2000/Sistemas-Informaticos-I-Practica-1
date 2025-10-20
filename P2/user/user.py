@@ -1,34 +1,36 @@
 from quart import Quart, jsonify, request
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, Mapped, mapped_column, sessionmaker, AsyncSession
-import json
-import os
+from sqlalchemy import select, and_
+from sqlalchemy.orm import declarative_base, Mapped, mapped_column, sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 import uuid
+import os
 
+# Parametros de la base de datos
 usuario= 'alumnodb'
 contraseña= '1234'
-host='localhost'
+host='0.0.0.0'
 port= '5432'
 database='si1'
+
+# URL de la conexion
 url_conexion=f'postgresql+asyncpg://{usuario}:{contraseña}@{host}:{port}/{database}'
-engine=create_engine(url_conexion, echo=True)
+engine=create_async_engine(url_conexion, echo=True)
 
 Base= declarative_base()
 
 class Usuario(Base):
     __tablename__='usuarios'
     id: Mapped[int]= mapped_column(primary_key=True)
-    nombre: Mapped[str] = mapped_column(not_nullable=True)
-    contrasena: Mapped[str] = mapped_column(not_nullable=True)
-    saldo: Mapped[float]= mapped_column(not_nullable=True, default=0.0, checkable= 'saldo >= 0.0')
+    nombre: Mapped[str] = mapped_column(nullable=False)
+    contrasena: Mapped[str] = mapped_column(nullable=False)
+    saldo: Mapped[float]= mapped_column(nullable=False,default=0.0)
+    
 
 #secret_uuid=uuid.UUID(hex='00010203-0405-0607-0809-0a0b0c0d0e0f')
 app = Quart(__name__)
 
-
-
-@app.route('/user/create', methods=['POST'])
+@app.route('/user', methods=['PUT'])
 
 async def create_user():
     data=await request.get_json()
@@ -36,7 +38,7 @@ async def create_user():
     if not name:
         return jsonify({"error": "Name data is empty"}), 404 
 
-    elif not data.get("psswd"):
+    elif not data.get("password"):
         return jsonify({"error": "Password data is empty"}), 404
     
     
@@ -47,7 +49,7 @@ async def create_user():
     
     new_user =Usuario(
         nombre=name,
-        contrasena=str(data.get("psswd")),
+        contrasena=str(data.get("password")),
         saldo=data.get("saldo", 0.0)
     )
     
@@ -58,15 +60,16 @@ async def create_user():
     
     return jsonify(new_user)
 
-@app.route('/user/login', methods=['POST'])
+@app.route('/user', methods=['GET'])
 async def get_user():
     data = await request.get_json()
     name = data.get("name")
-    psswd = data.get("psswd")
+    password = data.get("password")
+    async_session= sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     if not name:
         return jsonify({"error": "Name data is empty"}), 404 
 
-    elif not psswd:
+    elif not password:
         return jsonify({"error": "Password data is empty"}), 404
     
     async with async_session() as session:
@@ -75,7 +78,7 @@ async def get_user():
             .where(
                 and_(
                     Usuario.nombre == name, 
-                    Usuario.contrasena == psswd
+                    Usuario.contrasena == password
                 )
             )
         )

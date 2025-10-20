@@ -13,7 +13,22 @@ services:
       - ./schema.sql:/docker-entrypoint-initdb.d/1_schema.sql
       - ./populate.sql:/docker-entrypoint-initdb.d/2_populate.sql
       - ./db_data:/var/lib/postgresql/data
+    networks:
+      - default
+  user:
+    build:
+      context: ./user
+      dockerfile: Dockerfile
+    container_name: user_service
+    ports:
+      - "5050:5050"   
+    networks:
+      - default
 
 volumes:
   db_data:
+
+networks:
+  default:
+    driver: bridge
 
