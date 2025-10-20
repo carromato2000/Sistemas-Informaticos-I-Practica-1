@@ -9,7 +9,7 @@ import os
 # Parametros de la base de datos
 usuario= 'alumnodb'
 contraseña= '1234'
-host='0.0.0.0'
+host='db'
 port= '5432'
 database='si1'
 
