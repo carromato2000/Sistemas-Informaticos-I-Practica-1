@@ -23,7 +23,7 @@ async def get_movies(title = None, year = None, genre = None, actor = None):
             result = await conn.execute(text(
                 "SELECT DISTINCT m.* FROM movie m "
                 "JOIN casts c ON m.movieid = c.movie "
-                "JOIN actores a ON c.actor = a.actorid "
+                "JOIN actor a ON c.actor = a.actorid "
                 "WHERE a.name = :actor "
                 "AND (CAST(:title AS VARCHAR) IS NULL OR m.title = :title) "
                 "AND (CAST(:year AS INT) IS NULL OR m.year = :year) "
