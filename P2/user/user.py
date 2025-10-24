@@ -65,10 +65,11 @@ async def create_user():
     except UserAlreadyExistsError:
         return jsonify({"error": "User already exists"}), 409
 
-    token = str(uuid.uuid5(secret_uuid, str(user.id)))
+    uid = str(user.id)
+    token = uid +'.'+str(uuid.uuid5(secret_uuid, str(user.id)))
 
     body = {
-        "uid": str(user.id),
+        "uid": uid,
         "token": token
     }
 
@@ -87,10 +88,11 @@ async def get_user():
     except InvalidCredentialsError:
         return jsonify({"error": "Invalid credentials"}), 401
     
-    token = str(uuid.uuid5(secret_uuid, str(user.id)))
+    uid = str(user.id)
+    token = uid+'.'+str(uuid.uuid5(secret_uuid, str(user.id)))
 
     body = {
-        "uid": str(user.id),
+        "uid": uid,
         "token": token
     }
 
