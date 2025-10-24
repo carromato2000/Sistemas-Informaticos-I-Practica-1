@@ -1,23 +1,26 @@
 from quart import Quart, jsonify, request
 import uuid
+import model
 
 secret_uuid=uuid.UUID(hex='00010203-0405-0607-0809-0a0b0c0d0e0f')
 app = Quart(__name__)
 
-def validate_token(user_id):
+def validate_token():
     """
     Valida el token de autorización de la cabecera de la petición.
     Retorna True si el token es válido, False en caso contrario.
     """
     auth_header = request.headers.get('Authorization')
-    
     if not auth_header:
         return False
     
-    # El formato típico es "Bearer <token>" o simplemente "<token>"
-    token = auth_header
     if auth_header.startswith('Bearer '):
-        token = auth_header[7:]  # Elimina "Bearer "
+        auth_header = auth_header[7:]  # Elimina "Bearer "
+
+    try:
+        user_id , token = auth_header.split('.')
+    except ValueError:
+        return False
     
     # Genera el token esperado para este usuario
     expected_token = str(uuid.uuid5(secret_uuid, str(user_id)))
@@ -33,7 +36,13 @@ async def get_movies():
     year = request.args.get('year')
     genre = request.args.get('genre')
     actor = request.args.get('actor')
-    return jsonify({"message": "Funcionalidad no implementada aún"}), 501
+    if year is not None:
+        try:
+            year = int(year)
+        except ValueError:
+            return jsonify({"error": "Year must be an integer"}), 400
+    movies = await model.get_movies(title=title, year=year, genre=genre, actor=actor)
+    return jsonify(movies), 200
 
 @app.route('/movies/<movieid>', methods=['GET'])
 async def get_movie(movieid):
@@ -76,4 +85,4 @@ async def get_order(orderid):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050)
+    app.run(host='0.0.0.0', port=5051)

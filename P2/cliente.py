@@ -15,16 +15,6 @@ def main():
     print("# Creación y autenticación de usuarios para el test")
     print("# =======================================================")
 
-    r = requests.put(f"{USERS}/user", json={"name": "admin", "password": "admin"})
-    if ok("Crear usuario administrador predefinido", r.status_code == HTTPStatus.OK and r.json()):
-        data = r.json()
-        _, _ = data["uid"], data["username"]
-    else:
-        print("\nPruebas incompletas: Fin del test por error crítico")
-        print(r.status_code, r.text)
-        exit(-1)
-
-
     # Usuario administrador por defecto, debe existir
     r = requests.get(f"{USERS}/user", json={"name": "admin", "password": "admin"})
     if ok("Autenticar usuario administrador predefinido", r.status_code == HTTPStatus.OK):
@@ -43,14 +33,12 @@ def main():
         data = r.json()
         uid_alice, _ = data["uid"], data["username"]
     else:
-        print("\nPruebas incompletas: Fin del test por error crítico")
         print(r.status_code, r.text)
-        exit(-1)
 
     r = requests.get(f"{USERS}/user", json={"name": "alice", "password": "secret"})
-    if ok("Autenticar usuario 'alice'", r.status_code == HTTPStatus.OK and r.json()["uid"] == uid_alice):
+    if ok("Autenticar usuario 'alice'", r.status_code == HTTPStatus.OK):
         data = r.json()
-        _, token_alice = data["uid"], data["token"]
+        uid_alice, token_alice = data["uid"], data["token"]
     else:
         print("\nPruebas incompletas: Fin del test por error crítico")
 

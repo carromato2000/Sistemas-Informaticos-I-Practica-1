@@ -1,56 +1,54 @@
-CREATE TABLE peliculas(
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(255) NOT NULL,
-    anio INT NOT NULL,
-    genero VARCHAR(255) NOT NULL,
-    precio DECIMAL(10, 2) NOT NULL CHECK (precio >= 0)
+CREATE TABLE movie(
+    movieid SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    year INT NOT NULL,
+    genre VARCHAR(255) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL 
+    CHECK (price >= 0)
 );
 
-CREATE TABLE actores(
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(255) NOT NULL,
-    fecha_nacimiento DATE NOT NULL,
-    fecha_defuncion DATE
-    CHECK (fecha_defuncion IS NULL OR fecha_defuncion > fecha_nacimiento)
+CREATE TABLE actor(
+    actorid SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE repartos(
-    pelicula_id INT REFERENCES peliculas(id) ON DELETE CASCADE,
-    actor_id INT REFERENCES actores(id) ON DELETE CASCADE,
-    rol VARCHAR(255) NOT NULL
+CREATE TABLE casts(
+    movie INT REFERENCES movie(movieid) ON DELETE CASCADE,
+    actor INT REFERENCES actor(actorid) ON DELETE CASCADE,
+    character VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE usuarios(
-    id CHAR(32) PRIMARY KEY,    -- Usamos CHAR(32) porque guardaremos el UID haciendo UID.hex()
-    nombre VARCHAR(255) NOT NULL UNIQUE, -- El nombre de usuario debe ser unico
-    contrasena VARCHAR(255) NOT NULL, -- Almacenaremos el hash de la contraseña
-    saldo REAL NOT NULL DEFAULT 0
-    CHECK (saldo >= 0)
+CREATE TABLE "user"(
+    userid CHAR(32) PRIMARY KEY,    -- Usamos CHAR(32) porque guardaremos el UID haciendo UID.hex()
+    name VARCHAR(255) NOT NULL UNIQUE, -- El nombre de usuario debe ser unico
+    password VARCHAR(255) NOT NULL, -- Almacenaremos el hash de la contraseña
+    balance REAL NOT NULL DEFAULT 0
+    CHECK (balance >= 0)
 );
 
-CREATE TABLE valoraciones(
-    usuario CHAR(32) REFERENCES usuarios(id) ON DELETE CASCADE,
-    pelicula INT REFERENCES peliculas(id) ON DELETE CASCADE,
-    PRIMARY KEY (usuario, pelicula),
-    nota INT NOT NULL,
-    comentario TEXT
+CREATE TABLE ratings(
+    "user" CHAR(32) REFERENCES "user"(userid) ON DELETE CASCADE,
+    movie INT REFERENCES movie(movieid) ON DELETE CASCADE,
+    PRIMARY KEY ("user", movie),
+    score INT NOT NULL,
+    comment TEXT
 );
 
-CREATE TABLE carritos(
-    usuario CHAR(32) REFERENCES usuarios(id) ON DELETE CASCADE,
-    pelicula INT REFERENCES peliculas(id),
-    PRIMARY KEY (usuario, pelicula)
+CREATE TABLE carts(
+    "user" CHAR(32) REFERENCES "user"(userid) ON DELETE CASCADE,
+    movie INT REFERENCES movie(movieid),
+    PRIMARY KEY ("user", movie)
 );
 
-CREATE TABLE pedidos(
-    id SERIAL PRIMARY KEY,
-    usuario CHAR(32) REFERENCES usuarios(id) ON DELETE CASCADE,
-    fecha TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    estado VARCHAR(50) NOT NULL
+CREATE TABLE "order"(
+    orderid SERIAL PRIMARY KEY,
+    "user" CHAR(32) REFERENCES "user"(userid) ON DELETE CASCADE,
+    creationDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    state VARCHAR(50) NOT NULL
 );
 
-CREATE TABLE pedidos_peliculas(
-    pedido INT REFERENCES pedidos(id) ON DELETE CASCADE,
-    pelicula INT REFERENCES peliculas(id),
-    PRIMARY KEY (pedido, pelicula)
+CREATE TABLE orders_movies(
+    "order" INT REFERENCES "order"(orderid) ON DELETE CASCADE,
+    movie INT REFERENCES movie(movieid),
+    PRIMARY KEY ("order", movie)
 );
