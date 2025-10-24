@@ -1,17 +1,17 @@
 -- Populate database with sample data
 
 -- Movies
-INSERT INTO movie (title, year, genre, price) VALUES 
-('El Padrino', 1972, 'Drama', 9.99),
-('Pulp Fiction', 1994, 'Thriller', 8.99),
-('El Señor de los Anillos: La Comunidad del Anillo', 2001, 'Fantasía', 12.99),
-('Matrix', 1999, 'Ciencia Ficción', 7.99),
-('Titanic', 1997, 'Romance', 6.99),
-('El Rey León', 1994, 'Animación', 5.99),
-('Parásitos', 2019, 'Drama', 14.99),
-('Interestelar', 2014, 'Ciencia Ficción', 11.99),
-('Regreso al Futuro', 1985, 'Ciencia Ficción', 7.99),
-('El Laberinto del Fauno', 2006, 'Fantasía', 9.99);
+INSERT INTO movie (title, year, genre, price, description) VALUES 
+('El Padrino', 1972, 'Drama', 9.99, 'La historia de la familia Corleone, una de las más poderosas familias mafiosas de Nueva York.'),
+('Pulp Fiction', 1994, 'Thriller', 8.99, 'Una serie de historias entrelazadas que giran en torno al crimen en Los Ángeles.'),
+('El Señor de los Anillos: La Comunidad del Anillo', 2001, 'Fantasía', 12.99, 'Un hobbit llamado Frodo emprende un viaje para destruir un anillo poderoso.'),
+('Matrix', 1999, 'Ciencia Ficción', 7.99, 'Un hacker descubre la verdadera naturaleza de su realidad y su papel en la guerra contra sus controladores.'),
+('Titanic', 1997, 'Romance', 6.99, 'La trágica historia de amor entre Jack y Rose a bordo del fatídico RMS Titanic.'),
+('El Rey León', 1994, 'Animación', 5.99, 'La aventura de un joven león llamado Simba que lucha por reclamar su lugar como rey.'),
+('Parásitos', 2019, 'Drama', 14.99, 'Una familia pobre se infiltra en la vida de una familia rica, desencadenando una serie de eventos inesperados.'),
+('Interestelar', 2014, 'Ciencia Ficción', 11.99, 'Un grupo de exploradores viaja a través de un agujero de gusano en el espacio en un intento por asegurar la supervivencia de la humanidad.'),
+('Regreso al Futuro', 1985, 'Ciencia Ficción', 7.99, 'Un adolescente viaja en el tiempo y debe asegurarse de que sus padres se conozcan para no desaparecer.'),
+('El Laberinto del Fauno', 2006, 'Fantasía', 9.99, 'Una joven se adentra en un mundo de fantasía para escapar de la realidad de la posguerra en España.');
 
 -- Actors
 INSERT INTO actor (name) VALUES 

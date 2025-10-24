@@ -1,6 +1,7 @@
 from quart import Quart, jsonify, request
 import uuid
 import model
+import os
 
 from exceptions import UserAlreadyExistsError, UserNotFoundError, InvalidCredentialsError
 
@@ -49,6 +50,7 @@ async def create_user():
     token = uid +'.'+str(uuid.uuid5(secret_uuid, str(user.userid)))
 
     body = {
+        "username": user.name,
         "uid": uid,
         "token": token
     }

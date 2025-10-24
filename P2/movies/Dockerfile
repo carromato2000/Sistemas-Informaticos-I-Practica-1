@@ -1,6 +1,7 @@
 FROM python:3.13-slim
-WORKDIR .
-COPY . .
+WORKDIR /app
+COPY requirements.txt .
 RUN pip install --no-cache-dir --root-user-action=ignore -r requirements.txt
-EXPOSE 5050
+COPY . .
+EXPOSE 5051
 CMD ["python3", "movies.py"]

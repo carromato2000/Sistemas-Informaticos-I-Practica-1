@@ -3,7 +3,8 @@ CREATE TABLE movie(
     title VARCHAR(255) NOT NULL,
     year INT NOT NULL,
     genre VARCHAR(255) NOT NULL,
-    price DECIMAL(10, 2) NOT NULL 
+    price DECIMAL(10, 2) NOT NULL,
+    description TEXT
     CHECK (price >= 0)
 );
 
