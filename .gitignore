@@ -1,11 +1,21 @@
 */venv
 __pycache__
-P1/p1-2025-26.pdf
+**.pdf
 .vscode
+
+/**
+ * Estas líneas son para la P1.
+ */
 user/users.txt
 file/*
 !P1/file/Dockerfile
 !P1/file/.dockerignore
 !P1/file/file.py
 !P1/file/requirements.txt
+
+/**
+ * Estas líneas son para la P2.
+ */
 P2/db_data
+**.pdf
+P2/material_inicial
