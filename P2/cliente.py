@@ -56,7 +56,7 @@ def main():
 
     headers_alice = {"Authorization": f"Bearer {token_alice}"}
 
-    return 
+
     print("# =======================================================")
     print("# Distintas consultas de alice al catálogo de películas")
     print("# =======================================================")

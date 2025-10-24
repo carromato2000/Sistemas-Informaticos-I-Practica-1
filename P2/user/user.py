@@ -27,6 +27,27 @@ def validate_token(user_id):
     
     return token == expected_token
 
+
+def validate_token(user_id):
+    """
+    Valida el token de autorización de la cabecera de la petición.
+    Retorna True si el token es válido, False en caso contrario.
+    """
+    auth_header = request.headers.get('Authorization')
+    
+    if not auth_header:
+        return False
+    
+    # El formato típico es "Bearer <token>" o simplemente "<token>"
+    token = auth_header
+    if auth_header.startswith('Bearer '):
+        token = auth_header[7:]  # Elimina "Bearer "
+    
+    # Genera el token esperado para este usuario
+    expected_token = str(uuid.uuid5(secret_uuid, str(user_id)))
+    
+    return token == expected_token
+
 @app.route('/user', methods=['PUT'])
 
 async def create_user():
@@ -74,6 +95,21 @@ async def get_user():
     }
 
     return jsonify(body), 200
+
+@app.route('/user/<userid>', methods=['PATCH'])
+async def update_password(userid):
+    """
+    Permitira cambiar la contrasena del usuario autenticado.
+    """
+    return jsonify({"message": "Funcionalidad no implementada aún"}), 501
+
+@app.route('/user/<userid>', methods=['DELETE'])
+async def delete_user(userid):
+    return jsonify({"message": "Funcionalidad no implementada aún"}), 501
+
+@app.route('/user/credit', methods=['POST'])
+async def add_credit():
+    return jsonify({"message": "Funcionalidad no implementada aún"}), 501
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5050)
