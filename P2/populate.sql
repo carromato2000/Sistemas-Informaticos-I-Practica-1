@@ -45,44 +45,44 @@ INSERT INTO repartos (pelicula_id, actor_id, rol) VALUES
 (9, 12, 'Marty McFly'),
 (10, 13, 'Ofelia');
 
--- Usuarios
-INSERT INTO usuarios (nombre, contrasena, saldo) VALUES 
-('usuario1', 'password123', 50.00),
-('usuario2', 'securePass456', 75.50),
-('usuario3', 'p@$$word789', 100.00),
-('usuario4', 'safePassword', 30.25),
-('usuario5', 'secretCode123', 60.75);
+-- Usuarios (usando UUIDs en formato hex de 32 caracteres)
+INSERT INTO usuarios (id, nombre, contrasena, saldo) VALUES 
+('a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6', 'usuario1', 'password123', 50.00),
+('b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7', 'usuario2', 'securePass456', 75.50),
+('c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8', 'usuario3', 'p@$$word789', 100.00),
+('d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9', 'usuario4', 'safePassword', 30.25),
+('e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0', 'usuario5', 'secretCode123', 60.75);
 
 -- Valoraciones
 INSERT INTO valoraciones (usuario, pelicula, nota, comentario) VALUES 
-(1, 1, 5, 'Una obra maestra del cine'),
-(1, 4, 4, 'Revolucionaria para su época'),
-(2, 2, 5, 'Excelente dirección de Tarantino'),
-(2, 5, 3, 'Buena historia pero algo lenta'),
-(3, 3, 5, 'Increíble adaptación de Tolkien'),
-(3, 8, 5, 'Una experiencia visual impresionante'),
-(4, 9, 4, 'Un clásico de ciencia ficción'),
-(4, 6, 5, 'La mejor película de Disney'),
-(5, 7, 5, 'Una película que rompe barreras'),
-(5, 10, 4, 'Del Toro en su mejor momento');
+('a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6', 1, 5, 'Una obra maestra del cine'),
+('a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6', 4, 4, 'Revolucionaria para su época'),
+('b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7', 2, 5, 'Excelente dirección de Tarantino'),
+('b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7', 5, 3, 'Buena historia pero algo lenta'),
+('c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8', 3, 5, 'Increíble adaptación de Tolkien'),
+('c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8', 8, 5, 'Una experiencia visual impresionante'),
+('d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9', 9, 4, 'Un clásico de ciencia ficción'),
+('d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9', 6, 5, 'La mejor película de Disney'),
+('e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0', 7, 5, 'Una película que rompe barreras'),
+('e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0', 10, 4, 'Del Toro en su mejor momento');
 
 -- Carritos
 INSERT INTO carritos (usuario, pelicula) VALUES 
-(1, 2),
-(1, 3),
-(2, 4),
-(3, 5),
-(3, 6),
-(4, 7),
-(5, 8);
+('a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6', 2),
+('a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6', 3),
+('b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7', 4),
+('c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8', 5),
+('c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8', 6),
+('d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9', 7),
+('e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0', 8);
 
 -- Pedidos
 INSERT INTO pedidos (usuario, fecha, estado) VALUES 
-(1, '2025-09-15 10:30:00', 'Completado'),
-(2, '2025-09-20 14:45:00', 'Completado'),
-(3, '2025-09-25 09:15:00', 'En proceso'),
-(4, '2025-10-01 16:20:00', 'En proceso'),
-(5, '2025-10-05 11:00:00', 'Pendiente');
+('a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6', '2025-09-15 10:30:00', 'Completado'),
+('b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7', '2025-09-20 14:45:00', 'Completado'),
+('c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8', '2025-09-25 09:15:00', 'En proceso'),
+('d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9', '2025-10-01 16:20:00', 'En proceso'),
+('e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0', '2025-10-05 11:00:00', 'Pendiente');
 
 -- Pedidos_Peliculas
 INSERT INTO pedidos_peliculas (pedido, pelicula) VALUES 

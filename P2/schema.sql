@@ -21,14 +21,15 @@ CREATE TABLE repartos(
 );
 
 CREATE TABLE usuarios(
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(255) NOT NULL,
-    contrasena VARCHAR(255) NOT NULL,
-    saldo DECIMAL(10, 2) NOT NULL DEFAULT 0 CHECK (saldo >= 0)
+    id CHAR(32) PRIMARY KEY,    -- Usamos CHAR(32) porque guardaremos el UID haciendo UID.hex()
+    nombre VARCHAR(255) NOT NULL UNIQUE, -- El nombre de usuario debe ser unico
+    contrasena VARCHAR(255) NOT NULL, -- Almacenaremos el hash de la contraseña
+    saldo REAL NOT NULL DEFAULT 0
+    CHECK (saldo >= 0)
 );
 
 CREATE TABLE valoraciones(
-    usuario INT REFERENCES usuarios(id) ON DELETE CASCADE,
+    usuario CHAR(32) REFERENCES usuarios(id) ON DELETE CASCADE,
     pelicula INT REFERENCES peliculas(id) ON DELETE CASCADE,
     PRIMARY KEY (usuario, pelicula),
     nota INT NOT NULL,
@@ -36,14 +37,14 @@ CREATE TABLE valoraciones(
 );
 
 CREATE TABLE carritos(
-    usuario INT REFERENCES usuarios(id) ON DELETE CASCADE,
+    usuario CHAR(32) REFERENCES usuarios(id) ON DELETE CASCADE,
     pelicula INT REFERENCES peliculas(id),
     PRIMARY KEY (usuario, pelicula)
 );
 
 CREATE TABLE pedidos(
     id SERIAL PRIMARY KEY,
-    usuario INT REFERENCES usuarios(id) ON DELETE CASCADE,
+    usuario CHAR(32) REFERENCES usuarios(id) ON DELETE CASCADE,
     fecha TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     estado VARCHAR(50) NOT NULL
 );

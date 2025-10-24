@@ -12,7 +12,7 @@ services:
     volumes:
       - ./schema.sql:/docker-entrypoint-initdb.d/1_schema.sql
       - ./populate.sql:/docker-entrypoint-initdb.d/2_populate.sql
-      - ./db_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
   user:
     build:
       context: ./user
