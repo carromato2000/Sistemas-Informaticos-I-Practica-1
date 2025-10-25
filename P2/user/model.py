@@ -36,9 +36,11 @@ class User(Base):
 async def create_user(name: str, password: str):
     async_session= sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     
+    # Generar un UID único para el usuario y hashear la contraseña
     UID = uuid.uuid4()
     password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
+    # Crear la instancia del usuario
     new_user = User(
         userid = UID.hex,
         name=name,
@@ -52,6 +54,7 @@ async def create_user(name: str, password: str):
             await session.refresh(new_user)  # Refrescar para obtener valores del servidor
         except IntegrityError:
             await session.rollback()
+            # Si hay un error de integridad, probablemente el usuario ya existe
             raise UserAlreadyExistsError()
     
     return new_user
@@ -79,25 +82,49 @@ async def delete_user(userid: str, calling_userid: str):
     async_session= sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     
     async with async_session() as session:
+        # Comprobar si el usuario que llama es admin
         user_is_admin=await session.execute(
             select(User).where(and_(User.userid == calling_userid, User.name == 'admin'))
         )
         if not user_is_admin.scalars().first():
-            return -1
+            raise PermissionError()
         
+        # Obtener el usuario por userid
         result = await session.execute(
             select(User).where(User.userid == userid)
         )
         user = result.scalars().first()
         
         if not user:
-            return -2
+            raise UserNotFoundError()
         
+        # Eliminarlo
         await session.delete(user)
         await session.commit()
     
     return 0
-"""    
+
+async def update_password(userid: str, new_password: str):
+    async_session= sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+    
+    async with async_session() as session:
+        # Obtener el usuario por userid
+        result = await session.execute(
+            select(User).where(User.userid == userid)
+        )
+        user = result.scalars().first()
+        
+        if not user:
+            raise UserNotFoundError()
+        
+        # Actualizar la contraseña
+        new_password_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+        user.password = new_password_hash.decode('utf-8')
+        
+        # Guardar los cambios
+        session.add(user)
+        await session.commit()
+
 async def update_credit(userid: str, amount:float):
     async_session= sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     
@@ -119,4 +146,3 @@ async def update_credit(userid: str, amount:float):
         await session.refresh(user)
     
     return user
-"""

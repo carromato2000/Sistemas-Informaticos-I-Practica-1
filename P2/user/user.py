@@ -85,7 +85,24 @@ async def update_password(userid):
     """
     Permitira cambiar la contrasena del usuario autenticado.
     """
-    return jsonify({"message": "Funcionalidad no implementada aún"}), 501
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}), 401
+    auth_userid = request.headers.get('Authorization')[7:].split('.')[0]
+    if auth_userid != userid:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = await request.get_json()
+    password=data.get("password")
+    if not password:
+        return jsonify({"error": "New password data is empty"}), 404
+    
+    try:
+        await model.update_password(userid, (await data.get("password")))
+    except UserNotFoundError:
+        return jsonify({"error": "User not found"}), 404
+    
+    return jsonify({"message": "Password updated successfully"}), 200
+    
 
 @app.route('/user/<userid>', methods=['DELETE'])
 async def delete_user(userid):
@@ -93,20 +110,23 @@ async def delete_user(userid):
         return jsonify({"error": "Unauthorized"}), 401
     headers = request.headers.get('Authorization')
     calling_userid = headers.split(' ')[1].split('.')[0]
-    delete_result= await model.delete_user(userid, calling_userid)
-    if delete_result == -1:
+    try:
+        await model.delete_user(userid, calling_userid)
+    except PermissionError:
         return jsonify({"error": "Unauthorized: Admin privileges required"}), 403
-    elif delete_result == -2:   
+    except UserNotFoundError: 
         return jsonify({"error": "User not found"}), 404
     return jsonify({"message": "User deleted successfully"}), 200
-"""
+
 @app.route('/user/credit', methods=['POST'])
 async def add_credit():
     if not validate_token():
         return jsonify({"error": "Unauthorized"}), 401
     headers = request.headers.get('Authorization')
     user_id = headers.split(' ')[1].split('.')[0]
-    amount_data= request.get_json().get("amount")
+    
+    data= await request.get_json()
+    amount_data= data = data.get("amount")
     if not amount_data:
         return jsonify({"error": "Amount data is empty"}), 404 
     try:
@@ -118,7 +138,7 @@ async def add_credit():
     
     user= await model.update_credit(user_id, amount)
     return jsonify({"new_credit": f"{user.balance}"}), 200
-"""
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5050)
 
