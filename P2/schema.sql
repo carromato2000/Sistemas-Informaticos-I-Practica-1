@@ -45,7 +45,8 @@ CREATE TABLE "order"(
     orderid SERIAL PRIMARY KEY,
     "user" CHAR(32) REFERENCES "user"(userid) ON DELETE CASCADE,
     creationDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    state VARCHAR(50) NOT NULL
+    state VARCHAR(50) NOT NULL,
+    precio DECIMAL(10,2) NOT NULL DEFAULT 0
 );
 
 CREATE TABLE orders_movies(

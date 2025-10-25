@@ -36,6 +36,16 @@ async def get_movies():
     year = request.args.get('year')
     genre = request.args.get('genre')
     actor = request.args.get('actor')
+    if title is not None:
+        try:
+            title=str(title).title()
+        except ValueError:
+            return jsonify({"error": "Title must be a string"}), 400
+    if actor is not None:
+        try:
+            actor=str(actor).title()
+        except ValueError:
+            return jsonify({"error": "Actor must be a string"}), 400
     if year is not None:
         try:
             year = int(year)
@@ -49,39 +59,143 @@ async def get_movie(movieid):
     """
     Retorna los detalles de una película específica del catálogo
     """
-    return jsonify({"message": "Funcionalidad no implementada aún"}), 501
+    if not movieid.isdigit():
+        return jsonify({"error": "Invalid movie ID format"}), 400
+    movie= await model.get_movie_by_id(int(movieid))
+    if not movie:
+        return jsonify({"error": "Movie not found"}), 404
+    print("[DEBUG] Movie found:", movie)
+    return jsonify(movie), 200
+        
 
 @app.route('/cart', methods=['GET'])
 async def get_cart():
     """
     Retorna el contenido del carrito de compras
     """
-    return jsonify({"message": "Funcionalidad no implementada aún"}), 501
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}), 401
+    headers = request.headers.get('Authorization')
+    user_id = headers.split(' ')[1].split('.')[0]
+    movie= await model.get_carts(user_id)
+   
+    return jsonify(movie), 200
 
 @app.route('/cart/<movieid>', methods=['PUT'])
 async def add_movie_to_cart(movieid):
     """
     Añade una película al carrito
     """
-    return jsonify({"message": "Funcionalidad no implementada aún"}), 501
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}), 401
+    if movieid is None:
+        return jsonify({"error": "Movie ID is required"}), 400
+    if not movieid.isdigit():
+        return jsonify({"error": "Invalid movie ID format"}), 400
+    headers = request.headers.get('Authorization')
+    user_id = headers.split(' ')[1].split('.')[0]
+    movie_not_in_cart=await model.add_movie_to_cart(user_id, int(movieid))
+    if not movie_not_in_cart:
+        return jsonify({"error": "Movie already in cart"}), 409
+    else:
+        return jsonify({"message": "Movie added to cart"}), 200
 
 @app.route('/cart/<movieid>', methods=['DELETE'])
-async def remove_movie_from_cart(movieid):
+async def delete_movie_from_cart(movieid):
     """
     Elimina una película del carrito
     """
-    return jsonify({"message": "Funcionalidad no implementada aún"}), 501
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}), 401
+    if movieid is None:
+        return jsonify({"error": "Movie ID is required"}), 400
+    if not movieid.isdigit():
+        return jsonify({"error": "Invalid movie ID format"}), 400
+    headers = request.headers.get('Authorization')
+    user_id = headers.split(' ')[1].split('.')[0]
+    movie_in_cart=await model.delete_movie_from_cart(user_id, int(movieid))
+    if not movie_in_cart:
+        return jsonify({"error": "Movie not in cart"}), 404
+    else:
+        return jsonify({"message": "Movie removed from cart"}), 200
+    
 
 @app.route('/cart/checkout', methods=['POST'])
 async def checkout_cart():
     """
     Paga el contenido del carrito de compras con el saldo.
     """
-    return jsonify({"message": "Funcionalidad no implementada aún"}), 501
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}), 401
+    headers = request.headers.get('Authorization')
+    user_id = headers.split(' ')[1].split('.')[0]
+    order= await model.checkout_cart(user_id)
+    if order == -1:
+        return jsonify({"error": "User not found"}), 404
+    elif order == -2:
+        return jsonify({"error": "Cart is empty"}), 404
+    elif order == -3:
+        return jsonify({"error": "Insufficient funds"}), 402
+    elif order.get("orderid") is None:
+        return jsonify({"error": "Order creation failed"}), 500
+    else:
+        return jsonify(order), 200
 
 @app.route('/orders/<orderid>', methods=['GET'])
 async def get_order(orderid):
-    return jsonify({"message": "Funcionalidad no implementada aún"}), 501
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}), 401
+    if orderid is None:
+        return jsonify({"error": "Order ID is required"}), 400
+    if not orderid.isdigit():
+        return jsonify({"error": "Invalid order ID format"}), 400
+    order= await model.get_order_by_id(int(orderid))
+    if not order:
+        return jsonify({"error": "Order not found"}), 404
+    return jsonify(order), 200
+    
+
+@app.route('/user/credit', methods=['POST'])
+async def add_credit():
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}), 401
+    headers = request.headers.get('Authorization')
+    user_id = headers.split(' ')[1].split('.')[0]
+    data= await request.get_json()
+    amount_data= data.get("amount")
+    
+    if not amount_data:
+        return jsonify({"error": "Amount data is empty"}), 404 
+    try:
+        amount = float(amount_data)
+    except ValueError:
+        return jsonify({"error": "Amount must be a number"}), 400
+    if amount <= 0:
+        return jsonify({"error": "Amount must be positive"}), 400
+    
+    new_balance= await model.update_credit(user_id, amount)
+    if new_balance == -1:
+        return jsonify({"error": "User not found"}), 404
+    return jsonify({"new_credit": f"{new_balance}"}), 200
+
+@app.route('/user/credit/<amount>', methods=['POST'])
+async def set_credit(amount):
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}), 401
+    headers = request.headers.get('Authorization')
+    user_id = headers.split(' ')[1].split('.')[0]
+    try:
+        amount_value = float(amount)
+    except ValueError:
+        return jsonify({"error": "Amount must be a number"}), 400
+    if amount_value < 0:
+        return jsonify({"error": "Amount must be non-negative"}), 400
+    
+    current_balance= await model.set_credit(user_id, amount_value)
+    if current_balance == -1:
+        return jsonify({"error": "User not found"}), 404
+    
+    return jsonify({"new_credit": f"{current_balance}"}), 200
 
 
 if __name__ == '__main__':

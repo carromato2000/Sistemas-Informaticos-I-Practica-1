@@ -24,7 +24,7 @@ def main():
         print("\nPruebas incompletas: Fin del test por error crítico")
         print(r.status_code, r.text)
         exit(-1)
-
+    
     headers_admin = {"Authorization": f"Bearer {token_admin}"}
 
     # Se asume que el usuario 'Alice' no existe
@@ -32,13 +32,16 @@ def main():
     if ok("Crear usuario 'alice'", r.status_code == HTTPStatus.OK and r.json()):
         data = r.json()
         uid_alice, _ = data["uid"], data["username"]
+        
     else:
         print(r.status_code, r.text)
+    
 
     r = requests.get(f"{USERS}/user", json={"name": "alice", "password": "secret"})
     if ok("Autenticar usuario 'alice'", r.status_code == HTTPStatus.OK):
         data = r.json()
         uid_alice, token_alice = data["uid"], data["token"]
+        print(f"UID de alice: {uid_alice}")
     else:
         print("\nPruebas incompletas: Fin del test por error crítico")
 
@@ -60,19 +63,21 @@ def main():
     
     # Se asume que al menos hay una película que cumple la condición. Si no se reciben
     # los datos de ninguna película el test se da por no satisfecho
+    movieids = []
     r = requests.get(f"{CATALOG}/movies", params={"title": "matrix"}, headers=headers_alice)
     if ok("Buscar películas con 'matrix' en el título", r.status_code == HTTPStatus.OK and r.json()):
         data = r.json()
         if data:
             for movie in data:
                 print(f"\t[{movie['movieid']}] {movie['title']}")
+                movieids.append(movie['movieid'])
 
     r = requests.get(f"{CATALOG}/movies", params={"title": "No debe haber pelis con este título"}, headers=headers_alice)
     ok("Búsqueda fallida de películas por título", r.status_code == HTTPStatus.OK and not r.json())
     
     # Los ids de estas búsqueda se utilizarán después para las pruebas de la gestión
     # del carrito
-    movieids = []
+    
     r = requests.get(f"{CATALOG}/movies", params={"title": "Gladiator", "year": 2000, "genre": "action"}, headers=headers_alice)
     if ok("Buscar películas por varios campos de movie", r.status_code == HTTPStatus.OK):
         data = r.json()
@@ -95,6 +100,17 @@ def main():
     r = requests.get(f"{CATALOG}/movies/99999999", headers=headers_alice)
     ok(f"Obtener detalles de la película con ID no válido", HTTPStatus.NOT_FOUND)
     
+    ## Prueba de david id
+    r= requests.get(f"{CATALOG}/movies/11", headers=headers_alice)
+    ok(f"Obtener detalles de la película con ID 11", r.status_code == HTTPStatus.OK and r.json() and r.json()['movieid'] == 11)
+    data = r.json()
+    
+    print(f"\tTitulo: {data['title']}") 
+    print(f"\tAño: {data['year']}")
+    print(f"\tGénero: {data['genre']}")
+    print(f"\tDescripción: {data['description']}")
+    print(f"\tPrecio: {data['price']}")
+    
     r = requests.get(f"{CATALOG}/movies", params={"actor": "Tom Hardy"}, headers=headers_alice)
     if ok("Buscar películas en las que participa 'Tom Hardy'", r.status_code == HTTPStatus.OK and r.json()):
         data = r.json()
@@ -106,7 +122,6 @@ def main():
     print("# =======================================================")
     print("# Gestión del carrito de alice")
     print("# =======================================================")
-
     for movieid in movieids:
         r = requests.put(f"{CATALOG}/cart/{movieid}", headers=headers_alice)
         if ok(f"Añadir película con ID [{movieid}] al carrito", r.status_code == HTTPStatus.OK):
@@ -131,6 +146,9 @@ def main():
                         print(f"\t[{movie['movieid']}] {movie['title']} - {movie['price']}")
                 else:
                     print("\tEl carrito está vacío.")
+    
+    r=requests.post(f"{CATALOG}/user/credit/{0}", headers=headers_alice)
+    ok("Setear saldo a 0 para pruebas de checkout con saldo insuficiente", r.status_code == HTTPStatus.OK)
     
     r = requests.post(f"{CATALOG}/cart/checkout", headers=headers_alice)
     ok("Checkout del carrito con saldo insuficiente", r.status_code == HTTPStatus.PAYMENT_REQUIRED)

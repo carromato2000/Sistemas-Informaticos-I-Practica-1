@@ -75,3 +75,48 @@ async def get_user(name: str, password: str):
     else:
         raise (UserNotFoundError())
     
+async def delete_user(userid: str, calling_userid: str):
+    async_session= sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+    
+    async with async_session() as session:
+        user_is_admin=await session.execute(
+            select(User).where(and_(User.userid == calling_userid, User.name == 'admin'))
+        )
+        if not user_is_admin.scalars().first():
+            return -1
+        
+        result = await session.execute(
+            select(User).where(User.userid == userid)
+        )
+        user = result.scalars().first()
+        
+        if not user:
+            return -2
+        
+        await session.delete(user)
+        await session.commit()
+    
+    return 0
+"""    
+async def update_credit(userid: str, amount:float):
+    async_session= sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+    
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.userid == userid)
+        )
+        user = result.scalars().first()
+        
+        if not user:
+            raise UserNotFoundError()
+        
+        user.balance += amount
+        if user.balance < 0:
+            raise ValueError("Insufficient balance")
+        
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
+    
+    return user
+"""

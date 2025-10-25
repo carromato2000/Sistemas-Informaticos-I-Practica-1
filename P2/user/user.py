@@ -89,12 +89,36 @@ async def update_password(userid):
 
 @app.route('/user/<userid>', methods=['DELETE'])
 async def delete_user(userid):
-    return jsonify({"message": "Funcionalidad no implementada aún"}), 501
-
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}), 401
+    headers = request.headers.get('Authorization')
+    calling_userid = headers.split(' ')[1].split('.')[0]
+    delete_result= await model.delete_user(userid, calling_userid)
+    if delete_result == -1:
+        return jsonify({"error": "Unauthorized: Admin privileges required"}), 403
+    elif delete_result == -2:   
+        return jsonify({"error": "User not found"}), 404
+    return jsonify({"message": "User deleted successfully"}), 200
+"""
 @app.route('/user/credit', methods=['POST'])
 async def add_credit():
-    return jsonify({"message": "Funcionalidad no implementada aún"}), 501
-
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}), 401
+    headers = request.headers.get('Authorization')
+    user_id = headers.split(' ')[1].split('.')[0]
+    amount_data= request.get_json().get("amount")
+    if not amount_data:
+        return jsonify({"error": "Amount data is empty"}), 404 
+    try:
+        amount = float(amount_data)
+    except ValueError:
+        return jsonify({"error": "Amount must be a number"}), 400
+    if amount <= 0:
+        return jsonify({"error": "Amount must be positive"}), 400
+    
+    user= await model.update_credit(user_id, amount)
+    return jsonify({"new_credit": f"{user.balance}"}), 200
+"""
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5050)
 
