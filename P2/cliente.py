@@ -60,14 +60,11 @@ def main():
                 print(f"\t- {movie['title']}\n\t  {movie['description']}")
         else:
             print("\tNo hay películas en el catálogo")
-    
+    movieids = []
     # Se asume que al menos hay una película que cumple la condición. Si no se reciben
     # los datos de ninguna película el test se da por no satisfecho
     r = requests.get(f"{CATALOG}/movies", params={"title": "Matrix"}, headers=headers_alice)
     if ok("Buscar películas con 'Matrix' en el título", r.status_code == HTTPStatus.OK and r.json()):
-    movieids = []
-    r = requests.get(f"{CATALOG}/movies", params={"title": "matrix"}, headers=headers_alice)
-    if ok("Buscar películas con 'matrix' en el título", r.status_code == HTTPStatus.OK and r.json()):
         data = r.json()
         if data:
             for movie in data:
