@@ -36,10 +36,11 @@ async def create_user():
     name=data.get("name")
     password=data.get("password")
     if not name:
-        return jsonify({"error": "Name data is empty"}), 404 
-
-    elif not password:
-        return jsonify({"error": "Password data is empty"}), 404
+        return jsonify({"error": "Name data is empty"}), 400
+    if not password:
+        return jsonify({"error": "Password data is empty"}), 400
+    if len(password)<4:
+        return jsonify({"error": "Password must be at least 4 characters"}), 400
 
     try:
         user = await model.create_user(name, password)
@@ -124,7 +125,7 @@ async def add_credit():
         return jsonify({"error": "Unauthorized"}), 401
     headers = request.headers.get('Authorization')
     user_id = headers.split(' ')[1].split('.')[0]
-    
+
     data= await request.get_json()
     amount_data= data = data.get("amount")
     if not amount_data:

@@ -23,13 +23,9 @@ def main():
     print("# =======================================================")
     print("# Limpiar base de datos")
     print("# =======================================================")
+
+    cliente_users.teardown(headers_admin, uid_alice)
     
-    r = requests.delete(f"{USERS}/user/{uid_alice}", headers=headers_admin)
-    ok("Borrar usuario alice", r.status_code == HTTPStatus.OK)
-
-    r = requests.delete(f"{USERS}/user/{uid_alice}", headers=headers_admin)
-    ok("Borrar usuario inexistente", r.status_code == HTTPStatus.NOT_FOUND)
-
     print("\nPruebas completadas.")
 
 if __name__ == "__main__":

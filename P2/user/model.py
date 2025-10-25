@@ -89,6 +89,9 @@ async def delete_user(userid: str, calling_userid: str):
         if not user_is_admin.scalars().first():
             raise PermissionError()
         
+        if userid == calling_userid:
+            raise PermissionError()
+        
         # Obtener el usuario por userid
         result = await session.execute(
             select(User).where(User.userid == userid)

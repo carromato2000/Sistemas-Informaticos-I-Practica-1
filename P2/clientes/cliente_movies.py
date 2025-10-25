@@ -1,6 +1,7 @@
 
 import requests
 from http import HTTPStatus
+import cliente_users
 
 from urls import USERS, CATALOG, ok
 
@@ -75,3 +76,9 @@ def main(headers_alice):
                 movieids.append(movie['movieid'])
 
     return movieids
+
+if __name__ == "__main__":
+    # Recuperar el usuario alice para obtener su token
+    headers_alice, uid_alice, headers_admin, uid_admin = cliente_users.setup(silent = True)
+    main(headers_alice)
+    cliente_users.teardown(headers_admin, uid_alice, silent = True)
