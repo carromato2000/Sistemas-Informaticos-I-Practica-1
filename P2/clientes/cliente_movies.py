@@ -40,9 +40,7 @@ def main(headers_alice, headers_admin):
 
     r = requests.put(f"{CATALOG}/movies", params={"title": "Nueva Película", "year": 2024, "genre": "Drama", "price" : 9.99},
                      data ={"description": "Descripción de la nueva película"}, headers=headers_alice)
-    if ok("Intento de añadir película por usuario no admin", r.status_code == HTTPStatus.UNAUTHORIZED):
-        pass
-    else:
+    if not ok("Intento de añadir película por usuario no admin", r.status_code == HTTPStatus.UNAUTHORIZED):
         print(r.status_code, r.text)
 
     movie_id = ""
@@ -71,27 +69,19 @@ def main(headers_alice, headers_admin):
         movie_id = data[0]['movieid']
 
     r = requests.delete(f"{CATALOG}/movies/{movie_id}", headers=headers_alice)
-    if ok("Intento de eliminar película por usuario no admin", r.status_code == HTTPStatus.UNAUTHORIZED):
-        pass
-    else:
+    if not ok("Intento de eliminar película por usuario no admin", r.status_code == HTTPStatus.UNAUTHORIZED):
         print(r.status_code, r.text)
 
     r = requests.delete(f"{CATALOG}/movies/{movie_id}", headers=headers_admin)
-    if ok("Eliminar película por usuario admin", r.status_code == HTTPStatus.OK):
-        pass
-    else:
+    if not ok("Eliminar película por usuario admin", r.status_code == HTTPStatus.OK):
         print(r.status_code, r.text)
 
     r = requests.delete(f"{CATALOG}/movies/hola", headers=headers_admin)
-    if ok("Intento de eliminar película con ID no numérico", r.status_code == HTTPStatus.BAD_REQUEST):
-        pass
-    else:
+    if not ok("Intento de eliminar película con ID no numérico", r.status_code == HTTPStatus.BAD_REQUEST):
         print(r.status_code, r.text)
 
     r = requests.delete(f"{CATALOG}/movies/99999999", headers=headers_admin)
-    if ok("Intento de eliminar película inexistente", r.status_code == HTTPStatus.NOT_FOUND):
-        pass
-    else:
+    if not ok("Intento de eliminar película inexistente", r.status_code == HTTPStatus.NOT_FOUND):
         print(r.status_code, r.text)
 
     # Los ids de estas búsqueda se utilizarán después para las pruebas de la gestión
@@ -139,112 +129,108 @@ def main(headers_alice, headers_admin):
 
     r = requests.put(f"{CATALOG}/actors", params={"name": "Chris Hemsworth", "birthdate": "1977-09-15"},
                      headers=headers_alice)
-    if ok("Intento de añadir actor por usuario no admin", r.status_code == HTTPStatus.UNAUTHORIZED):
-        pass
-    else:
+    if not ok("Intento de añadir actor por usuario no admin", r.status_code == HTTPStatus.UNAUTHORIZED):
         print(r.status_code, r.text)
 
     r = requests.put(f"{CATALOG}/actors", params={"name": "Chris Hemsworth", "birthdate": "1977-09-15"},
                      headers=headers_admin)
-    if ok("Añadir actor por usuario admin", r.status_code == HTTPStatus.CREATED and r.json()):
-        pass
-    else:
+    if not ok("Añadir actor por usuario admin", r.status_code == HTTPStatus.CREATED and r.json()):
         print(r.status_code, r.text)
 
     r = requests.put(f"{CATALOG}/actors", params={"name": "Chris Hemsworth", "birthdate": "1977-09-15"},
                     headers=headers_admin)
-    if ok("Intento de añadir actor ya existente", r.status_code == HTTPStatus.CONFLICT):
-        pass
-    else:
+    if not ok("Intento de añadir actor ya existente", r.status_code == HTTPStatus.CONFLICT):
         print(r.status_code, r.text)
 
     r = requests.get(f"{CATALOG}/actors", params={"name": "Chris Hemsworth", "birthdate": "1984-11-22"},
                     headers=headers_admin)
     if ok("Buscar actor 'Chris Hemsworth'", r.status_code == HTTPStatus.OK and r.json()):
-        actor_id = r.json()[0]['actorid']
+        actorid = r.json()[0]['actorid']
     else:
         print(r.status_code, r.text)
 
-    r = requests.delete(f"{CATALOG}/actors/{actor_id}", headers=headers_admin)
-    if ok("Eliminar actor por usuario admin", r.status_code == HTTPStatus.OK):
-        pass
-    else:
+    r = requests.delete(f"{CATALOG}/actors/{actorid}", headers=headers_admin)
+    if not ok("Eliminar actor por usuario admin", r.status_code == HTTPStatus.OK):
         print(r.status_code, r.text)
 
     r = requests.delete(f"{CATALOG}/actors/99999999", headers=headers_admin)
-    if ok("Intento de eliminar actor inexistente", r.status_code == HTTPStatus.NOT_FOUND):
-        pass
-    else:
+    if not ok("Intento de eliminar actor inexistente", r.status_code == HTTPStatus.NOT_FOUND):
         print(r.status_code, r.text)
 
     r = requests.delete(f"{CATALOG}/actors/hola", headers=headers_admin)
-    if ok("Intento de eliminar actor con ID no numérico", r.status_code == HTTPStatus.BAD_REQUEST):
-        pass
-    else:
+    if not ok("Intento de eliminar actor con ID no numérico", r.status_code == HTTPStatus.BAD_REQUEST):
         print(r.status_code, r.text)
 
     r = requests.get(f"{CATALOG}/movies", params={"year" : 2001}, headers=headers_alice)
-    movieid = r.json()[0]['movieid']
-    r = requests.put(f"{CATALOG}/movies/{movieid}",params = {"actor_id": 999999, "character": "Saruman"}, headers=headers_admin)
-    if ok("Asignar actor que no existe a una pelicula", r.status_code == HTTPStatus.NOT_FOUND):
-        pass
-    else:
+    try:
+        movieid = r.json()[0]['movieid']
+    except (KeyError, IndexError):
+        print("Fin de las pruebas por error crítico")
+        return 
+    r = requests.put(f"{CATALOG}/movies/{movieid}/characters",params = {"actorid": 999999, "character": "Saruman"}, headers=headers_admin)
+    if not ok("Asignar actor que no existe a una pelicula", r.status_code == HTTPStatus.NOT_FOUND):
         print(r.status_code, r.text)
+
     r = requests.put(f"{CATALOG}/actors", params={"name": "Christopher Lee", "birthdate": "1922-05-27"},headers=headers_admin)
     if ok("Añadir actor Christopher Lee por usuario admin", r.status_code == HTTPStatus.CREATED and r.json(),silent = True):
-        actor_id = r.json()['actorid']
+        actorid = r.json()['actorid']
     else:
         print(r.status_code, r.text)
 
-    r = requests.put(f"{CATALOG}/movies/abc",params = {"actor_id": 2, "character": "Saruman"}, headers=headers_admin)
-    if ok("Asignar un actor a una película con id no numérico", r.status_code == HTTPStatus.BAD_REQUEST):
-        pass
-    else:
+    r = requests.put(f"{CATALOG}/movies/abc/characters",params = {"actorid": 2, "character": "Saruman"}, headers=headers_admin)
+    if not ok("Asignar un actor a una película con id no numérico", r.status_code == HTTPStatus.BAD_REQUEST):
         print(r.status_code, r.text)
 
-    r = requests.put(f"{CATALOG}/movies/{movieid}",params = {"actor_id": "hola", "character": "Saruman"}, headers=headers_admin)
-    if ok("Asignar actor con id no numérico a una pelicula", r.status_code == HTTPStatus.BAD_REQUEST):
-        pass
-    else:
+    r = requests.put(f"{CATALOG}/movies/{movieid}/characters",params = {"actorid": "hola", "character": "Saruman"}, headers=headers_admin)
+    if not ok("Asignar actor con id no numérico a una pelicula", r.status_code == HTTPStatus.BAD_REQUEST):
         print(r.status_code, r.text)
 
-    r = requests.put(f"{CATALOG}/movies/{movieid}",params = {"actor_id": actor_id, "character": "Saruman"}, headers=headers_admin)
-    if ok("Asignar actor existente a una pelicula", r.status_code == HTTPStatus.OK):
-        pass
-    else:
+    r = requests.put(f"{CATALOG}/movies/{movieid}/characters",params = {"actorid": actorid, "character": "Saruman"}, headers=headers_admin)
+    if not ok("Asignar actor existente a una pelicula", r.status_code == HTTPStatus.OK):
         print(r.status_code, r.text)
     
-    r = requests.put(f"{CATALOG}/movies/{movieid}",params = {"actor_id": actor_id, "character": "Saruman"}, headers=headers_admin)
-    if ok("Asignar mismo actor nuevamente a una pelicula", r.status_code == HTTPStatus.CONFLICT):
-        pass
-    else:
+    r = requests.put(f"{CATALOG}/movies/{movieid}/characters",params = {"actorid": actorid, "character": "Saruman"}, headers=headers_admin)
+    if not ok("Asignar mismo actor nuevamente a una pelicula", r.status_code == HTTPStatus.CONFLICT):
         print(r.status_code, r.text)
 
-    r = requests.put(f"{CATALOG}/movies/{movieid}",headers=headers_alice)
-    if ok("Intento de añadir un actor a una película por un usuario no admin", r.status_code == HTTPStatus.UNAUTHORIZED):
-        pass
-    else:
+    r = requests.put(f"{CATALOG}/movies/{movieid}/characters",headers=headers_alice)
+    if not ok("Intento de añadir un actor a una película por un usuario no admin", r.status_code == HTTPStatus.UNAUTHORIZED):
         print(r.status_code, r.text)
 
-
-    r = requests.put(f"{CATALOG}/movies/999999",params = {"actor_id": actor_id, "character": "Saruman"}, headers=headers_admin)
-    if ok("Asignar actor a una pelicula que no existe", r.status_code == HTTPStatus.NOT_FOUND):
-        pass
-    else:
+    r = requests.put(f"{CATALOG}/movies/999999/characters",params = {"actorid": actorid, "character": "Saruman"}, headers=headers_admin)
+    if not ok("Asignar actor a una pelicula que no existe", r.status_code == HTTPStatus.NOT_FOUND):
         print(r.status_code, r.text)
 
-    r = requests.delete(f"{CATALOG}/movies/{movieid}/{actor_id}",params = {"character": "Saruman"}, headers=headers_admin)
-    if ok("Eliminar actor de una película", r.status_code == HTTPStatus.OK):
-        pass
-    else:
+    r = requests.delete(f"{CATALOG}/movies/{movieid}/characters/{actorid}", params = {"character": "Saruman"}, headers=headers_alice)
+    if not ok("Intento de eliminar un personaje de una película por un usuario no administrador", r.status_code == HTTPStatus.UNAUTHORIZED):
+        print(r.status_code, r.text)
+
+    r = requests.delete(f"{CATALOG}/movies/{movieid}/characters/{actorid}",params = {"character": "Saruman"}, headers=headers_admin)
+    if not ok("Eliminar actor de una película", r.status_code == HTTPStatus.OK):
+        print(r.status_code, r.text)
+
+    r = requests.delete(f"{CATALOG}/movies/{movieid}/characters/{actorid}", params= {"character": "Saruman"}, headers = headers_admin)
+    if not ok("Intento de eliminar un actor que no existe de una película", r.status_code == HTTPStatus.NOT_FOUND):
+        print(r.status_code, r.text)
+
+    r = requests.delete(f"{CATALOG}/movies/999999/characters/{actorid}", params = {"character": "character"}, headers = headers_admin)
+    if not ok("Intento de eliminar un actor de una película que no existe", r.status_code == HTTPStatus.NOT_FOUND):
+        print(r.status_code, r.text)
+    
+    r = requests.delete(f"{CATALOG}/movies/{movieid}/characters/abc", params = {"character": "character"}, headers = headers_admin)
+    if not ok("Intento de eliminar un actor con id no numérico a una película", r.status_code == HTTPStatus.BAD_REQUEST):
+        print(r.status_code, r.text)
+
+    r = requests.delete(f"{CATALOG}/movies/abc/characters/{actorid}", params = {"character": "character"}, headers = headers_admin)
+    if not ok("Intento de eliminar un actor de una película con id no numérico", r.status_code == HTTPStatus.BAD_REQUEST):
         print(r.status_code, r.text)
 
     return movieids
 
 def teardown(headers_admin):
     r = requests.get(f"{CATALOG}/actors", params={"name": "Christopher Lee"},headers=headers_admin)
-    actor_id = r.json()[0]['actorid']
-    r = requests.delete(f"{CATALOG}/actors/{actor_id}", headers=headers_admin)
+    actorid = r.json()[0]['actorid']
+    r = requests.delete(f"{CATALOG}/actors/{actorid}", headers=headers_admin)
 
 if __name__ == "__main__":
     # Recuperar el usuario alice para obtener su token
@@ -255,4 +241,4 @@ if __name__ == "__main__":
 
     from urls import test_passed, test_failed
     
-    print(f"\nPruebas completadas. Test pasados: {test_passed} / {test_passed + test_failed}")
+    print(f"\nPruebas completadas. Pruebas pasadas: {test_passed} / {test_passed + test_failed}")

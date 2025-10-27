@@ -22,7 +22,7 @@ def main():
 
     from urls import test_passed, test_failed
     
-    print(f"\nPruebas completadas. Test pasados: {test_passed} / {test_passed + test_failed}")
+    print(f"\nPruebas completadas. Pruebas pasadas: {test_passed} / {test_passed + test_failed}")
 
 if __name__ == "__main__":
     main()

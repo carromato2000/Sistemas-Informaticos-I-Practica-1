@@ -133,12 +133,11 @@ async def add_actor_to_movie(movieid: int, actorid: int, character: str = None):
         
 async def delete_actor_from_movie(movieid: int, actorid: int, character: str = None):
     async with engine.connect() as conn:
-        try:
-            await conn.execute(text(
-                "DELETE FROM casts WHERE movie = :movieid AND actor = :actorid"
-            ), {"movieid": movieid, "actorid": actorid})
-            await conn.commit()
-        except IntegrityError:
+        result = await conn.execute(text(
+            "DELETE FROM casts WHERE movie = :movieid AND actor = :actorid"
+        ), {"movieid": movieid, "actorid": actorid})
+        await conn.commit()
+        if result.rowcount == 0:
             raise NotFoundError("Character not found in movie")
 
 async def get_movie_by_id(movieid):

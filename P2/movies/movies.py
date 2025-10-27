@@ -223,26 +223,26 @@ async def add_actor_to_movie(movieid):
     except ValueError:
         return jsonify({"error": "Invalid movie ID format"}), 400
     
-    actor_id = request.args.get('actor_id')
+    actorid = request.args.get('actorid')
     character = request.args.get('character')
-    if actor_id is None:
+    if actorid is None:
         return jsonify({"error": "Actor ID is required"}), 400
     try:
-        actor_id = int(actor_id)
+        actorid = int(actorid)
     except ValueError:
         return jsonify({"error": "Invalid actor ID format"}), 400
     if character is None:
         return jsonify({"error": "Character name is required"}), 400
 
     try:
-        await model.add_actor_to_movie(movieid, actor_id, character)
+        await model.add_actor_to_movie(movieid, actorid, character)
     except NotFoundError as e:
         return jsonify({"error": e.message}), 404
     except AlreadyExistsError as e:
         return jsonify({"error": e.message}), 409
     return jsonify({"message": "Actor added to movie successfully"}), 200
 
-@app.route('/movies/<movieid>/characters/<actor_id>', methods=['DELETE'])
+@app.route('/movies/<movieid>/characters/<actorid>', methods=['DELETE'])
 async def delete_actor_from_movie(movieid,actorid):
     """
     Elimina un actor de una película existente
@@ -259,7 +259,7 @@ async def delete_actor_from_movie(movieid,actorid):
         return jsonify({"error": "Invalid movie ID format"}), 400
     
     try:
-        actor_id = int(actor_id)
+        actorid = int(actorid)
     except ValueError:
         return jsonify({"error": "Invalid actor ID format"}), 400
     character = request.args.get('character')
@@ -267,7 +267,7 @@ async def delete_actor_from_movie(movieid,actorid):
         return jsonify({"error": "Character name is required"}), 400
     
     try:
-        await model.delete_actor_from_movie(movieid, actor_id, character)
+        await model.delete_actor_from_movie(movieid, actorid, character)
     except NotFoundError as e:
         return jsonify({"error": e.message}), 404
     return jsonify({"message": "Actor removed from movie successfully"}), 200
