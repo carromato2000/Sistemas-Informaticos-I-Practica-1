@@ -2,7 +2,8 @@ from quart import Quart, jsonify, request
 import uuid
 
 import model
-from exceptions import MovieAlreadyExistsError, MovieNotFoundError
+from exceptions import *
+from datetime import date
 
 secret_uuid=uuid.UUID(hex='00010203-0405-0607-0809-0a0b0c0d0e0f')
 app = Quart(__name__)
@@ -108,12 +109,74 @@ async def add_movie():
             description=""
     
     try:
-        movieid= await model.add_movie(uid,title, year, genre, description, price)
+        movieid= await model.add_movie(title, year, genre, description, price)
     except MovieAlreadyExistsError:
         return jsonify({"error": "Movie already exists"}), 409
     if movieid is None:
         return jsonify({"error": "Failed to add movie"}), 500
     return jsonify({"movieid": movieid}), 201
+
+@app.route('/actors', methods=['PUT'])
+async def add_actor():
+    """
+    Añade un nuevo actor a la base de datos
+    """
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}), 401
+    uid = request.headers.get('Authorization').split(' ')[1].split('.')[0]
+    if not await model.validate_admin(uid):
+        return jsonify({"error": "User is not admin"}), 401
+    
+    name= request.args.get("name")
+    if not name:
+        return jsonify({"error": "Name data is empty"}), 400
+    birthdate= request.args.get("birthdate")
+    if not birthdate:
+        return jsonify({"error": "Birthdate data is empty"}), 400
+    
+    try:
+        birthdate = date.fromisoformat(birthdate)
+    except ValueError:
+        return jsonify({"error": "Birthdate must be in YYYY-MM-DD format"}), 400
+    try:
+        actorid= await model.add_actor(name, birthdate)
+    except ActorAlreadyExistsError:
+        return jsonify({"error": "Actor already exists"}), 409
+    if actorid is None:
+        return jsonify({"error": "Failed to add actor"}), 500
+    return jsonify({"actorid": actorid}), 201
+
+@app.route('/actors', methods=['GET'])
+async def get_actors():
+    """
+    Retorna un actor o conjunto de actores de la base de datos
+    """
+    name = request.args.get('name')
+    actors = await model.get_actors(name=name)
+    return jsonify(actors), 200
+
+@app.route('/actors/<actorid>', methods=['DELETE'])
+async def get_actor(actorid):
+    """
+    Elimina un actor de la base de datos
+    """
+    # Verificar token y obtener el uid del usuario que hace la peticion
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}), 401
+    uid = request.headers.get('Authorization').split(' ')[1].split('.')[0]
+    if not await model.validate_admin(uid):
+        return jsonify({"error": "User is not admin"}), 401
+
+    try:
+        int(actorid)
+    except ValueError:
+        return jsonify({"error": "Invalid actor ID format"}), 400
+
+    try:
+        await model.delete_actor(int(actorid))
+    except ActorNotFoundError:
+        return jsonify({"error": "Actor not found"}), 404
+    return jsonify({"message": "Actor deleted successfully"}), 200
 
 @app.route('/movies/<movieid>', methods=['DELETE'])
 async def delete_movie(movieid):
@@ -133,7 +196,7 @@ async def delete_movie(movieid):
         return jsonify({"error": "Invalid movie ID format"}), 400
 
     try:
-        await model.delete_movie(uid, int(movieid))
+        await model.delete_movie(int(movieid))
     except MovieNotFoundError:
         return jsonify({"error": "Movie not found"}), 404
     return jsonify({"message": "Movie deleted successfully"}), 200

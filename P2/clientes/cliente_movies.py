@@ -137,6 +137,47 @@ def main(headers_alice, headers_admin):
                 print(f"\t[{movie['movieid']}] {movie['title']}")
                 movieids.append(movie['movieid'])
 
+    r = requests.put(f"{CATALOG}/actors", params={"name": "Chris Hemsworth", "birthdate": "1977-09-15"},
+                     headers=headers_alice)
+    if ok("Intento de añadir actor por usuario no admin", r.status_code == HTTPStatus.UNAUTHORIZED):
+        pass
+    else:
+        print(r.status_code, r.text)
+
+    r = requests.put(f"{CATALOG}/actors", params={"name": "Chris Hemsworth", "birthdate": "1977-09-15"},
+                     headers=headers_admin)
+    if ok("Añadir actor por usuario admin", r.status_code == HTTPStatus.CREATED and r.json()):
+        pass
+    else:
+        print(r.status_code, r.text)
+
+    r = requests.put(f"{CATALOG}/actors", params={"name": "Chris Hemsworth", "birthdate": "1977-09-15"},
+                    headers=headers_admin)
+    if ok("Intento de añadir actor ya existente", r.status_code == HTTPStatus.CONFLICT):
+        pass
+    else:
+        print(r.status_code, r.text)
+
+    r = requests.get(f"{CATALOG}/actors", params={"name": "Chris Hemsworth", "birthdate": "1984-11-22"},
+                    headers=headers_admin)
+    if ok("Buscar actor 'Chris Hemsworth'", r.status_code == HTTPStatus.OK and r.json()):
+        actor_id = r.json()[0]['actorid']
+    else:
+        print(r.status_code, r.text)
+
+    r = requests.delete(f"{CATALOG}/actors/{actor_id}", headers=headers_admin)
+    if ok("Eliminar actor por usuario admin", r.status_code == HTTPStatus.OK):
+        pass
+    else:
+        print(r.status_code, r.text)
+
+    r = requests.delete(f"{CATALOG}/actors/99999999", headers=headers_admin)
+    if ok("Intento de eliminar actor inexistente", r.status_code == HTTPStatus.NOT_FOUND):
+        pass
+    else:
+        print(r.status_code, r.text)
+
+
     return movieids
 
 if __name__ == "__main__":

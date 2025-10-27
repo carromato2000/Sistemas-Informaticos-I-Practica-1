@@ -3,7 +3,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 
-from exceptions import MovieAlreadyExistsError, MovieNotFoundError
+from exceptions import *
 
 
 usuario= 'alumnodb'
@@ -45,7 +45,7 @@ async def get_movies(title = None, year = None, genre = None, actor = None):
             ), {"title": title, "year": year, "genre": genre, "actor": actor})
         return [dict(row._mapping) for row in result.fetchall()]
     
-async def add_movie(uid: str, title: str, year: int, genre: str, description: str, price: float):
+async def add_movie(title: str, year: int, genre: str, description: str, price: float):
     async with engine.connect() as conn:
         try:
             result = await conn.execute(text(
@@ -59,7 +59,7 @@ async def add_movie(uid: str, title: str, year: int, genre: str, description: st
         except IntegrityError:
             raise MovieAlreadyExistsError()
         
-async def delete_movie(uid: str, movieid: int):
+async def delete_movie(movieid: int):
     async with engine.connect() as conn:
         result = await conn.execute(text(
             "SELECT * FROM movie WHERE movieid = :movieid"
@@ -71,6 +71,41 @@ async def delete_movie(uid: str, movieid: int):
         await conn.execute(text(
             "DELETE FROM movie WHERE movieid = :movieid"
         ), {"movieid": movieid})
+        await conn.commit()
+
+async def get_actors(name):
+    async with engine.connect() as conn:
+        result = await conn.execute(text(
+            "SELECT * FROM actor WHERE name = :name"
+        ), {"name": name})
+        return [dict(row._mapping) for row in result.fetchall()]
+
+async def add_actor(name: str, birthdate):
+    async with engine.connect() as conn:
+        try:
+            result = await conn.execute(text(
+                "INSERT INTO actor (name, birthdate) "
+                "VALUES (:name, :birthdate) "
+                "RETURNING actorid"
+            ), {"name": name, "birthdate": birthdate})        
+            row = result.fetchone()
+            await conn.commit()
+            return row._mapping["actorid"] if row else None
+        except IntegrityError:
+            raise ActorAlreadyExistsError()
+
+async def delete_actor(actorid: int):
+    async with engine.connect() as conn:
+        result = await conn.execute(text(
+            "SELECT * FROM actor WHERE actorid = :actorid"
+        ), {"actorid": actorid})
+        actor = result.fetchone()
+        if not actor:
+            raise ActorNotFoundError()
+        
+        await conn.execute(text(
+            "DELETE FROM actor WHERE actorid = :actorid"
+        ), {"actorid": actorid})
         await conn.commit()
 
 async def get_movie_by_id(movieid):
@@ -122,7 +157,6 @@ async def delete_movie_from_cart(user, movieid):
             await conn.commit()
             return True
         
-
 async def update_credit(userid: str, amount: float):
     async with engine.connect() as conn:
         result = await conn.execute(text(
