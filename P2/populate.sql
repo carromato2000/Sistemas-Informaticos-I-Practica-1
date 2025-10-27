@@ -5,7 +5,7 @@ INSERT INTO movie (title, year, genre, price, description) VALUES
 ('El Padrino', 1972, 'Drama', 9.99, 'La historia de la familia Corleone, una de las más poderosas familias mafiosas de Nueva York.'),
 ('Pulp Fiction', 1994, 'Thriller', 8.99, 'Una serie de historias entrelazadas que giran en torno al crimen en Los Ángeles.'),
 ('El Señor de los Anillos: La Comunidad del Anillo', 2001, 'Fantasía', 12.99, 'Un hobbit llamado Frodo emprende un viaje para destruir un anillo poderoso.'),
-('Matrix', 1999, 'Ciencia Ficción', 7.99, 'Un hacker descubre la verdadera naturaleza de su realidad y su papel en la guerra contra sus controladores.'),
+('matrix', 1999, 'Ciencia Ficción', 7.99, 'Un hacker descubre la verdadera naturaleza de su realidad y su papel en la guerra contra sus controladores.'),
 ('Titanic', 1997, 'Romance', 6.99, 'La trágica historia de amor entre Jack y Rose a bordo del fatídico RMS Titanic.'),
 ('El Rey León', 1994, 'Animación', 5.99, 'La aventura de un joven león llamado Simba que lucha por reclamar su lugar como rey.'),
 ('Parásitos', 2019, 'Drama', 14.99, 'Una familia pobre se infiltra en la vida de una familia rica, desencadenando una serie de eventos inesperados.'),

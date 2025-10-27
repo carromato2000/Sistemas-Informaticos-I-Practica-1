@@ -18,6 +18,7 @@ def main():
     print("# Limpiar base de datos")
     print("# =======================================================")
 
+    cliente_movies.teardown(headers_admin)
     cliente_users.teardown(headers_admin, uid_alice)
 
     from urls import test_passed, test_failed
