@@ -12,7 +12,8 @@ INSERT INTO movie (title, year, genre, price, description) VALUES
 ('Interestelar', 2014, 'Ciencia Ficción', 11.99, 'Un grupo de exploradores viaja a través de un agujero de gusano en el espacio en un intento por asegurar la supervivencia de la humanidad.'),
 ('Regreso al Futuro', 1985, 'Ciencia Ficción', 7.99, 'Un adolescente viaja en el tiempo y debe asegurarse de que sus padres se conozcan para no desaparecer.'),
 ('El Laberinto del Fauno', 2006, 'Fantasía', 9.99, 'Una joven se adentra en un mundo de fantasía para escapar de la realidad de la posguerra en España.'),
-('Venom', 2018, 'Acción', 10.99, 'Un periodista se convierte en el huésped de un simbionte alienígena que le otorga superpoderes.');
+('Venom', 2018, 'Acción', 10.99, 'Un periodista se convierte en el huésped de un simbionte alienígena que le otorga superpoderes.'),
+('Mad Max: Fury Road', 2015, 'Acción', 10.99 , 'Una mujer se rebela contra un gobernante tiránico en busca de su patria con la ayuda de un grupo de prisioneras');
 
 -- Actors
 INSERT INTO actor (name, birthdate) VALUES 
@@ -46,7 +47,8 @@ INSERT INTO casts (movie, actor, character) VALUES
 (8, 11, 'Dra. Amelia Brand'),
 (9, 12, 'Marty McFly'),
 (10, 13, 'Ofelia'),
-(11, 14, 'Eddie Brock');
+(11, 14, 'Eddie Brock'),
+(12, 14, 'Max Rockatansky');
 
 -- Users (using bcrypt hashed passwords)
 
@@ -74,9 +76,11 @@ INSERT INTO ratings ("user", movie, score, comment) VALUES
 ('c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8', 8, 5, 'Una experiencia visual impresionante'),
 ('d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9', 9, 4, 'Un clásico de ciencia ficción'),
 ('d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9', 6, 5, 'La mejor película de Disney'),
+('d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9', 12, 5, 'La mejor película película de acción'),
 ('e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0', 7, 5, 'Una película que rompe barreras'),
 ('e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0', 10, 4, 'Del Toro en su mejor momento'),
 ('e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0', 11, 3, 'Entretenida pero predecible');
+
 
 -- Carts
 INSERT INTO carts ("user", movie) VALUES 
@@ -106,6 +110,7 @@ INSERT INTO orders_movies ("order", movie) VALUES
 (3, 8),
 (4, 9),
 (4, 6),
+(4, 12),
 (5, 7),
 (5, 10),
 (5, 11);
