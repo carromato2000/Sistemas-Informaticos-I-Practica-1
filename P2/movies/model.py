@@ -108,6 +108,17 @@ async def delete_actor(actorid: int):
         ), {"actorid": actorid})
         await conn.commit()
 
+async def add_actor_to_movie(actorid: int, movieid: int):
+    async with engine.connect() as conn:
+        try:
+            await conn.execute(text(
+                "INSERT INTO casts (actor, movie) "
+                "VALUES (:actorid, :movieid)"
+            ), {"actorid": actorid, "movieid": movieid})        
+            await conn.commit()
+        except IntegrityError:
+            raise MovieNotFoundError()
+
 async def get_movie_by_id(movieid):
     async with engine.connect() as conn:
         result = await conn.execute(text(

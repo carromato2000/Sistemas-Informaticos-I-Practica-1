@@ -215,6 +215,39 @@ async def get_movie(movieid):
     return jsonify(movie), 200
         
 
+@app.route('/movies/<movieid>', methods=['PUT'])
+async def add_actor_to_movie(movieid):
+    """
+    Añade un actor a una película existente
+    """
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}), 401
+    uid = request.headers.get('Authorization').split(' ')[1].split('.')[0]
+    if not await model.validate_admin(uid):
+        return jsonify({"error": "User is not admin"}), 401
+    
+    try:
+        movieid = int(movieid)
+    except ValueError:
+        return jsonify({"error": "Invalid movie ID format"}), 400
+    
+    actor_id = request.args.get('actor_id')
+    character = request.args.get('character')
+    if actor_id is None:
+        return jsonify({"error": "Actor ID is required"}), 400
+    try:
+        actor_id = int(actor_id)
+    except ValueError:
+        return jsonify({"error": "Invalid actor ID format"}), 400
+    if character is None:
+        return jsonify({"error": "Character name is required"}), 400
+
+    try:
+        await model.add_actor_to_movie(movieid, actor_id)
+    except MovieNotFoundError:
+        return jsonify({"error": "Movie or actor not found"}), 404
+    return jsonify({"message": "Actor added to movie successfully"}), 200
+
 @app.route('/cart', methods=['GET'])
 async def get_cart():
     """

@@ -10,9 +10,11 @@ def ok(name, cond, silent=False):
     if cond:
         status = "OK"
         global test_passed
-        test_passed += 1
+        if not silent:
+            test_passed += 1
     else:
         status = "FAIL"
         global test_failed
-        test_failed += 1
+        if not silent:
+            test_failed += 1
     return cond
