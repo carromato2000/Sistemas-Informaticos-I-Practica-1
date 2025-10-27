@@ -2,6 +2,9 @@ from http import HTTPStatus
 import requests
 from urls import CATALOG, ok
 
+test_failed = 0
+test_passed = 0
+
 def main(headers_alice, movieids):
     print("# =======================================================")
     print("# Gestión del carrito de alice")

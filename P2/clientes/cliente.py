@@ -6,16 +6,10 @@ import cliente_carts
 
 from urls import USERS, CATALOG, ok
 
-
-def ok(name, cond):
-    status = "OK" if cond else "FAIL"
-    print(f"[{status}] {name}")
-    return cond
-
 def main():
     headers_alice, uid_alice, headers_admin = cliente_users.main()
 
-    movieids = cliente_movies.main(headers_alice)
+    movieids = cliente_movies.main(headers_alice,headers_admin)
 
     cliente_carts.main(headers_alice, movieids)
 
@@ -25,8 +19,10 @@ def main():
     print("# =======================================================")
 
     cliente_users.teardown(headers_admin, uid_alice)
+
+    from urls import test_passed, test_failed
     
-    print("\nPruebas completadas.")
+    print(f"\nPruebas completadas. Test pasados: {test_passed} / {test_passed + test_failed}")
 
 if __name__ == "__main__":
     main()

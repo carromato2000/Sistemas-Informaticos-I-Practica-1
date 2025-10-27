@@ -103,3 +103,7 @@ def teardown(headers_admin, uid_alice, silent=False):
 if __name__ == "__main__":
     headers_alice, uid_alice, headers_admin = main()
     teardown(headers_admin, uid_alice)
+
+    from urls import test_passed, test_failed
+    
+    print(f"\nPruebas completadas. Test pasados: {test_passed} / {test_passed + test_failed}")

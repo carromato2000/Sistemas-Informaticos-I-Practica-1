@@ -1,6 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from datetime import datetime
+
+from exceptions import MovieAlreadyExistsError, MovieNotFoundError
 
 
 usuario= 'alumnodb'
@@ -11,6 +14,14 @@ database='si1'
 
 url_conexion=f'postgresql+asyncpg://{usuario}:{contraseña}@{host}:{port}/{database}'
 engine=create_async_engine(url_conexion, echo=True)
+
+async def validate_admin(uid: str):
+    async with engine.connect() as conn:
+        result = await conn.execute(text(
+            "SELECT * FROM \"user\" WHERE userid = :userid"
+        ), {"userid": uid})
+        user = result.fetchone()
+        return user and user.name == 'admin'
 
 async def get_movies(title = None, year = None, genre = None, actor = None):
     async with engine.connect() as conn:
@@ -33,6 +44,34 @@ async def get_movies(title = None, year = None, genre = None, actor = None):
                 "AND (CAST(:genre AS VARCHAR) IS NULL OR m.genre = :genre)"
             ), {"title": title, "year": year, "genre": genre, "actor": actor})
         return [dict(row._mapping) for row in result.fetchall()]
+    
+async def add_movie(uid: str, title: str, year: int, genre: str, description: str, price: float):
+    async with engine.connect() as conn:
+        try:
+            result = await conn.execute(text(
+                "INSERT INTO movie (title, year, genre, description, price) "
+                "VALUES (:title, :year, :genre, :description, :price) "
+                "RETURNING movieid"
+            ), {"title": title, "year": year, "genre": genre, "description": description, "price": price})        
+            row = result.fetchone()
+            await conn.commit()
+            return row._mapping["movieid"] if row else None
+        except IntegrityError:
+            raise MovieAlreadyExistsError()
+        
+async def delete_movie(uid: str, movieid: int):
+    async with engine.connect() as conn:
+        result = await conn.execute(text(
+            "SELECT * FROM movie WHERE movieid = :movieid"
+        ), {"movieid": movieid})
+        movie = result.fetchone()
+        if not movie:
+            raise MovieNotFoundError()
+        
+        await conn.execute(text(
+            "DELETE FROM movie WHERE movieid = :movieid"
+        ), {"movieid": movieid})
+        await conn.commit()
 
 async def get_movie_by_id(movieid):
     async with engine.connect() as conn:

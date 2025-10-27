@@ -15,21 +15,21 @@ INSERT INTO movie (title, year, genre, price, description) VALUES
 ('Venom', 2018, 'Acción', 10.99, 'Un periodista se convierte en el huésped de un simbionte alienígena que le otorga superpoderes.');
 
 -- Actors
-INSERT INTO actor (name) VALUES 
-('Marlon Brando'),
-('Al Pacino'),
-('John Travolta'),
-('Uma Thurman'),
-('Elijah Wood'),
-('Keanu Reeves'),
-('Carrie-Anne Moss'),
-('Leonardo DiCaprio'),
-('Kate Winslet'),
-('Matthew McConaughey'),
-('Anne Hathaway'),
-('Michael J. Fox'),
-('Ivana Baquero'),
-('Tom Hardy');
+INSERT INTO actor (name, birthdate) VALUES 
+('Marlon Brando', '1924-04-03'),
+('Al Pacino', '1940-04-25'),
+('John Travolta', '1954-02-18'),
+('Uma Thurman', '1970-04-29'),
+('Elijah Wood', '1981-01-28'),
+('Keanu Reeves', '1964-09-02'),
+('Carrie-Anne Moss', '1967-08-21'),
+('Leonardo DiCaprio', '1974-11-11'),
+('Kate Winslet', '1975-10-05'),
+('Matthew McConaughey', '1969-11-04'),
+('Anne Hathaway', '1982-11-12'),
+('Michael J. Fox', '1961-06-09'),
+('Ivana Baquero', '1994-06-11'),
+('Tom Hardy', '1977-09-15');
 
 -- Casts
 INSERT INTO casts (movie, actor, character) VALUES 

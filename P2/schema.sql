@@ -3,20 +3,23 @@ CREATE TABLE movie(
     title VARCHAR(255) NOT NULL,
     year INT NOT NULL,
     genre VARCHAR(255) NOT NULL,
-    price DECIMAL(10, 2) NOT NULL,
-    description TEXT
-    CHECK (price >= 0)
+    price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
+    description TEXT,
+    UNIQUE(title, year)
 );
 
 CREATE TABLE actor(
     actorid SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL
+    name VARCHAR(255) NOT NULL,
+    birthdate DATE,
+    UNIQUE(name, birthdate)
 );
 
 CREATE TABLE casts(
     movie INT REFERENCES movie(movieid) ON DELETE CASCADE,
     actor INT REFERENCES actor(actorid) ON DELETE CASCADE,
-    character VARCHAR(255) NOT NULL
+    character VARCHAR(255) NOT NULL,
+    PRIMARY KEY (movie, actor, character)
 );
 
 CREATE TABLE "user"(

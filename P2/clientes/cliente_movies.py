@@ -5,7 +5,10 @@ import cliente_users
 
 from urls import USERS, CATALOG, ok
 
-def main(headers_alice):
+test_failed = 0
+test_passed = 0
+
+def main(headers_alice, headers_admin):
     print("# =======================================================")
     print("# Distintas consultas de alice al catálogo de películas")
     print("# =======================================================")
@@ -31,7 +34,66 @@ def main(headers_alice):
 
     r = requests.get(f"{CATALOG}/movies", params={"title": "No debe haber pelis con este título"}, headers=headers_alice)
     ok("Búsqueda fallida de películas por título", r.status_code == HTTPStatus.OK and not r.json())
-    
+
+    r = requests.get(f"{CATALOG}/movies", params={"title": ""}, headers=headers_alice)
+    ok("Búsqueda de películas con título vacío:", r.status_code == HTTPStatus.OK and not r.json())
+
+    r = requests.put(f"{CATALOG}/movies", params={"title": "Nueva Película", "year": 2024, "genre": "Drama", "price" : 9.99},
+                     data ={"description": "Descripción de la nueva película"}, headers=headers_alice)
+    if ok("Intento de añadir película por usuario no admin", r.status_code == HTTPStatus.UNAUTHORIZED):
+        pass
+    else:
+        print(r.status_code, r.text)
+
+    movie_id = ""
+    r = requests.put(f"{CATALOG}/movies", params={"title": "Fight Club", "year": 1999, "genre": "Drama", "price" : 7.99},
+                     data ={"description": "...",}, headers=headers_admin)
+    if ok("Añadir película por usuario admin", r.status_code == HTTPStatus.CREATED and r.json()):
+        data = r.json()
+        movie_id = data["movieid"]
+    else:
+        print(r.status_code, r.text)
+
+    r = requests.put(f"{CATALOG}/movies", params={"title": "Fight Club", "year": 1999, "genre": "Drama", "price" : 7.99},
+                    data ={"description": "...",}, headers=headers_admin)
+    if ok("Intento de añadir película ya existente", r.status_code == HTTPStatus.CONFLICT):
+        pass
+    else:
+        print(r.status_code, r.text)
+
+    r = requests.get(f"{CATALOG}/movies",params={'title': 'Fight Club'}, headers=headers_admin)
+    if ok("Verificar que la película añadida existe", r.status_code == HTTPStatus.OK and r.json()):
+        data = r.json()
+        if movie_id != data[0]['movieid']:
+            print(f"Error: El ID de la película añadida no coincide: {movie_id} != {data[0]['movieid']}")
+        else:
+            print(f"\tID de la nueva película: {movie_id}")
+        movie_id = data[0]['movieid']
+
+    r = requests.delete(f"{CATALOG}/movies/{movie_id}", headers=headers_alice)
+    if ok("Intento de eliminar película por usuario no admin", r.status_code == HTTPStatus.UNAUTHORIZED):
+        pass
+    else:
+        print(r.status_code, r.text)
+
+    r = requests.delete(f"{CATALOG}/movies/{movie_id}", headers=headers_admin)
+    if ok("Eliminar película por usuario admin", r.status_code == HTTPStatus.OK):
+        pass
+    else:
+        print(r.status_code, r.text)
+
+    r = requests.delete(f"{CATALOG}/movies/hola", headers=headers_admin)
+    if ok("Intento de eliminar película con ID no numérico", r.status_code == HTTPStatus.BAD_REQUEST):
+        pass
+    else:
+        print(r.status_code, r.text)
+
+    r = requests.delete(f"{CATALOG}/movies/99999999", headers=headers_admin)
+    if ok("Intento de eliminar película inexistente", r.status_code == HTTPStatus.NOT_FOUND):
+        pass
+    else:
+        print(r.status_code, r.text)
+
     # Los ids de estas búsqueda se utilizarán después para las pruebas de la gestión
     # del carrito
     
@@ -80,5 +142,9 @@ def main(headers_alice):
 if __name__ == "__main__":
     # Recuperar el usuario alice para obtener su token
     headers_alice, uid_alice, headers_admin, uid_admin = cliente_users.setup(silent = True)
-    main(headers_alice)
+    main(headers_alice, headers_admin)
     cliente_users.teardown(headers_admin, uid_alice, silent = True)
+
+    from urls import test_passed, test_failed
+    
+    print(f"\nPruebas completadas. Test pasados: {test_passed} / {test_passed + test_failed}")

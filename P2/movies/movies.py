@@ -1,6 +1,8 @@
 from quart import Quart, jsonify, request
 import uuid
+
 import model
+from exceptions import MovieAlreadyExistsError, MovieNotFoundError
 
 secret_uuid=uuid.UUID(hex='00010203-0405-0607-0809-0a0b0c0d0e0f')
 app = Quart(__name__)
@@ -53,6 +55,88 @@ async def get_movies():
             return jsonify({"error": "Year must be an integer"}), 400
     movies = await model.get_movies(title=title, year=year, genre=genre, actor=actor)
     return jsonify(movies), 200
+
+@app.route('/movies', methods=['PUT'])
+async def add_movie():
+    """
+    Añade una nueva película al catálogo
+    """
+    # Verificar token y obtener el uid del usuario que hace la peticion
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}), 401
+    uid = request.headers.get('Authorization').split(' ')[1].split('.')[0]
+    if not await model.validate_admin(uid):
+        return jsonify({"error": "User is not admin"}), 401
+
+
+    # Obtener los parametros de la peticion, donde esta el titulo, genero y precio de la pelicula
+    title= request.args.get("title")
+    # La pelicula debe tener un titulo
+    if not title:
+        return jsonify({"error": "Title data is empty"}), 400
+    year_data= request.args.get("year")
+    # La pelicula debe tener un año
+    if not year_data:
+        return jsonify({"error": "Year data is empty"}), 400
+    price_data= request.args.get("price")
+    # La pelicula debe tener un precio
+    if not price_data:
+        return jsonify({"error": "Price data is empty"}), 400
+    genre= request.args.get("genre")
+    if not genre:
+        return jsonify({"error": "Genre data is empty"}), 400
+
+    try:
+        year = int(year_data)
+    except ValueError:
+        return jsonify({"error": "Year must be an integer"}), 400
+    try:
+        price = float(price_data)
+        if price < 0:
+            return jsonify({"error": "Price must be non-negative"}), 400
+    except ValueError:
+        return jsonify({"error": "Price must be a number"}), 400
+
+    # Obtenemod la descripcion del cuerpo de la peticion
+    data= await request.get_json()
+    # Si no hay cuerpo o no tiene descripcion, ponemos la cadena vacia
+    if data is None:
+        description=""
+    else:
+        description= data.get("description")
+        if description is None:
+            description=""
+    
+    try:
+        movieid= await model.add_movie(uid,title, year, genre, description, price)
+    except MovieAlreadyExistsError:
+        return jsonify({"error": "Movie already exists"}), 409
+    if movieid is None:
+        return jsonify({"error": "Failed to add movie"}), 500
+    return jsonify({"movieid": movieid}), 201
+
+@app.route('/movies/<movieid>', methods=['DELETE'])
+async def delete_movie(movieid):
+    """
+    Elimina una película del catálogo
+    """
+    # Verificar token y obtener el uid del usuario que hace la peticion
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}), 401
+    uid = request.headers.get('Authorization').split(' ')[1].split('.')[0]
+    if not await model.validate_admin(uid):
+        return jsonify({"error": "User is not admin"}), 401
+
+    try:
+        int(movieid)
+    except ValueError:
+        return jsonify({"error": "Invalid movie ID format"}), 400
+
+    try:
+        await model.delete_movie(uid, int(movieid))
+    except MovieNotFoundError:
+        return jsonify({"error": "Movie not found"}), 404
+    return jsonify({"message": "Movie deleted successfully"}), 200
 
 @app.route('/movies/<movieid>', methods=['GET'])
 async def get_movie(movieid):

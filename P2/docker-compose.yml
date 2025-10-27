@@ -36,6 +36,7 @@ services:
     volumes:
       - ./movies/movies.py:/app/movies.py
       - ./movies/model.py:/app/model.py
+      - ./movies/exceptions.py:/app/exceptions.py
     depends_on:
       - db
 
