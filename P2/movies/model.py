@@ -153,8 +153,9 @@ async def get_carts(user):
         
         result = await conn.execute(text(
             "SELECT m.* FROM movie m "
-            "JOIN carts c ON m.movieid = c.movie "
-            "WHERE c.\"user\" = :user"
+            "JOIN carts_movies c ON  c.movie =m.movieid "
+            "JOIN carts ON c.cart = carts.cartid "
+            "WHERE carts.\"user\" = :user"
         ), {"user": user})
         return [dict(row._mapping) for row in result.fetchall()]
 
@@ -163,29 +164,53 @@ async def add_movie_to_cart(user, movieid):
         return False
     async with engine.connect() as conn:
         cart_check= await conn.execute(text(
-            "SELECT * FROM carts WHERE \"user\" = :user AND movie = :movieid"
-        ), {"user": user, "movieid": movieid})
-        cart=[dict(row._mapping) for row in cart_check.fetchall()]
+            "SELECT cartid FROM carts WHERE \"user\" = :user"
+        ), {"user": user})
+        row=cart_check.fetchone()
+        if not row:
+            cart_check=await conn.execute(text(
+                "INSERT INTO carts (\"user\") VALUES (:user) RETURNING cartid"
+            ), {"user": user})
+            await conn.commit()
+            row=cart_check.fetchone()
+            
+        cartid=row._mapping["cartid"] if row else None
+        
+        movie_in_cart= await conn.execute(text(
+            "SELECT * FROM carts_movies WHERE cart = :cartid AND movie = :movieid"
+        ), {"cartid": cartid, "movieid": movieid})
+        cart= movie_in_cart.fetchone()        
+            
         if cart:
             return False
         else:
+            
             await conn.execute(text(
-                "INSERT INTO carts (\"user\", movie) VALUES (:user, :movieid)"
-            ), {"user": user, "movieid": movieid})
+                "INSERT INTO carts_movies (cart, movie) VALUES (:cartid, :movieid)"
+            ), {"cartid": cartid, "movieid": movieid})
             await conn.commit()
             return True
 
 async def delete_movie_from_cart(user, movieid):
     async with engine.connect() as conn:
+        cart_check= await conn.execute(text(
+            "SELECT cartid FROM carts WHERE \"user\" = :user"
+        ), {"user": user})
+        cart=cart_check.fetchone()
+        if not cart:
+            return False
+        cartid=cart._mapping["cartid"] if cart else None
         movie_in_cart= await conn.execute(text(
-            "SELECT * FROM carts WHERE \"user\" = :user AND movie = :movieid"
-        ), {"user": user, "movieid": movieid})
-        if not movie_in_cart.fetchone():
+            "SELECT * FROM carts_movies WHERE cart = :cartid AND movie = :movieid"
+        ), {"cartid": cartid, "movieid": movieid})
+        cart= movie_in_cart.fetchone()     
+        if not cart:
             return False
         else:
             await conn.execute(text(
-                "DELETE FROM carts WHERE \"user\" = :user AND movie = :movieid"
-            ), {"user": user, "movieid": movieid})
+                "DELETE FROM carts_movies WHERE cart = :cartid AND movie = :movieid"
+            ), {"cartid": cartid, "movieid": movieid})
+            
             await conn.commit()
             return True
         
@@ -211,7 +236,7 @@ async def update_credit(userid: str, amount: float):
 async def get_order_by_id(orderid: int):
     async with engine.connect() as conn:
         result = await conn.execute(text(
-            "SELECT o.orderid, o.creationDate AS \"creationDate\", o.state,o.precio, u.userid, u.name, u.balance "
+            "SELECT o.orderid, o.creationDate AS \"creationDate\",o.precio, u.userid, u.name, u.balance "
             "FROM \"order\" o "
             "JOIN \"user\" u ON o.\"user\" = u.userid "
             "WHERE o.orderid = :orderid"
@@ -224,7 +249,6 @@ async def get_order_by_id(orderid: int):
         order_details = {
             "orderid": order_row.orderid,
             "date": order_row.creationDate,
-            "state": order_row.state,
             "total": order_row.precio,
             "user": {
                 "userid": order_row.userid,
@@ -257,8 +281,9 @@ async def checkout_cart(user_id):
         
         cart_result = await conn.execute(text(
             "SELECT m.* FROM movie m "
-            "JOIN carts c ON m.movieid = c.movie "
-            "WHERE c.\"user\" = :user"
+            "JOIN carts_movies c ON c.movie = m.movieid "
+            "JOIN carts cs ON c.cart = cs.cartid "
+            "WHERE cs.\"user\" = :user"
         ), {"user": user_id})
         cart_items = [dict(row._mapping) for row in cart_result.fetchall()]
         
@@ -278,8 +303,8 @@ async def checkout_cart(user_id):
         
         
         result=await conn.execute(text(
-            "INSERT INTO \"order\" (\"user\", creationDate, state, precio) VALUES (:user, :creationDate,:state, :precio) RETURNING orderid"
-        ), {"user": user_id, "creationDate": datetime.now(), "state": "Pendiente", "precio": total_cost})
+            "INSERT INTO \"order\" (\"user\", creationDate, precio) VALUES (:user, :creationDate, :precio) RETURNING orderid"
+        ), {"user": user_id, "creationDate": datetime.now(), "precio": total_cost})
         row= result.fetchone()
         
         
@@ -288,6 +313,9 @@ async def checkout_cart(user_id):
                 "INSERT INTO orders_movies (\"order\", movie) "
                 "VALUES (:orderid, :movieid)"
             ), {"orderid": row._mapping["orderid"], "movieid": item["movieid"]})
+            await conn.execute(text(
+                "DELETE FROM carts_movies WHERE movie = :movieid AND cart = (SELECT cartid FROM carts WHERE \"user\" = :user)"
+            ), {"movieid": item["movieid"], "user": user_id})
         
         await conn.execute(text(
             "DELETE FROM carts WHERE \"user\" = :user"
