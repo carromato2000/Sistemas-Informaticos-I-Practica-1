@@ -73,6 +73,33 @@ async def delete_movie(movieid: int):
         ), {"movieid": movieid})
         await conn.commit()
 
+async def rate_movie(userid: str, movieid: int, score: int, comment: str = None):
+    async with engine.connect() as conn:
+        result = await conn.execute(text(
+            "SELECT * FROM movie WHERE movieid = :movieid"
+        ), {"movieid": movieid})
+        movie = result.fetchone()
+        if not movie:
+            raise NotFoundError("Movie not found")
+        # Si hay excepcion aqui, SQLAlchemy devolvera error 500, y eso es correcto
+        # Porque acamabos de ver que la pelicula existe y el usuario se verifica antes
+        # Ademas score y comment son validados en la capa de servicio
+        await conn.execute(text(
+            "INSERT INTO ratings (\"user\", movie, score, comment) "
+            "VALUES (:userid, :movieid, :score, :comment) "
+            "ON CONFLICT (\"user\", movie) DO UPDATE SET score = :score, comment = :comment"
+        ), {"userid": userid, "movieid": movieid, "score": score, "comment": comment})
+        await conn.commit()
+
+async def delete_rating(userid: str, movieid: int):
+    async with engine.connect() as conn:
+        result = await conn.execute(text(
+            "DELETE FROM ratings WHERE \"user\" = :userid AND movie = :movieid"
+        ), {"userid": userid, "movieid": movieid})
+        await conn.commit()
+        if result.rowcount == 0:
+            raise NotFoundError("Rating not found")
+
 async def get_actors(name):
     async with engine.connect() as conn:
         result = await conn.execute(text(

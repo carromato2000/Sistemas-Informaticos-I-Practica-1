@@ -225,6 +225,54 @@ def main(headers_alice, headers_admin):
     if not ok("Intento de eliminar un actor de una película con id no numérico", r.status_code == HTTPStatus.BAD_REQUEST):
         print(r.status_code, r.text)
 
+    r = requests.put(f"{CATALOG}/movies/{movieid}/rate",params={"score": 2}, data = {}, headers=headers_alice)
+    if not ok("Valorar una película sin comentario", r.status_code == HTTPStatus.OK):
+        print(r.status_code, r.text)
+
+    r = requests.put(f"{CATALOG}/movies/{movieid}/rate",params={"score": 5}, data = {"comment": "Excelente película"}, headers=headers_alice)
+    if not ok("Valorar una película con comentario", r.status_code == HTTPStatus.OK):
+        print(r.status_code, r.text)
+
+    r = requests.put(f"{CATALOG}/movies/999999/rate",params={"score": 5}, data = {"comment": "Excelente película"}, headers=headers_alice)
+    if not ok("Intento de valorar una película que no existe", r.status_code == HTTPStatus.NOT_FOUND):
+        print(r.status_code, r.text)
+
+    r = requests.put(f"{CATALOG}/movies/abc/rate",params = {"score": 2}, data = {"comment": "Excelente película"}, headers=headers_alice)
+    if not ok("Intento de valorar una película con id no numérico", r.status_code == HTTPStatus.BAD_REQUEST):
+        print(r.status_code, r.text)
+
+    r = requests.put(f"{CATALOG}/movies/{movieid}/rate", data = {"comment": "Excelente película"}, headers=headers_alice)
+    if not ok("Intento de valorar una película sin puntuación", r.status_code == HTTPStatus.BAD_REQUEST):
+        print(r.status_code, r.text)
+
+    r = requests.put(f"{CATALOG}/movies/{movieid}/rate",params={"score": 2}, headers=headers_alice)
+    if not ok("Intento de valorar una película sin comentario (2)", r.status_code == HTTPStatus.OK):
+        print(r.status_code, r.text)
+    
+    r = requests.put(f"{CATALOG}/movies/{movieid}/rate",params={"score": 6}, data = {"comment": "Excelente película"}, headers=headers_alice)
+    if not ok("Intento de valorar una película con puntuación no válida", r.status_code == HTTPStatus.BAD_REQUEST):
+        print(r.status_code, r.text)
+    
+    r = requests.put(f"{CATALOG}/movies/{movieid}/rate",params={"score": 0}, data = {"comment": "Excelente película"}, headers=headers_alice)
+    if not ok("Intento de valorar una película con puntuación no válida", r.status_code == HTTPStatus.BAD_REQUEST):
+        print(r.status_code, r.text)
+
+    r = requests.delete(f"{CATALOG}/movies/{movieid}/rate", headers=headers_alice)
+    if not ok("Eliminar valoración de una película", r.status_code == HTTPStatus.OK):
+        print(r.status_code, r.text)
+
+    r = requests.delete(f"{CATALOG}/movies/{movieid}/rate", headers=headers_alice)
+    if not ok("Intento de eliminar valoración inexistente de una película", r.status_code == HTTPStatus.NOT_FOUND):
+        print(r.status_code, r.text)
+
+    r = requests.delete(f"{CATALOG}/movies/999999/rate", headers=headers_alice)
+    if not ok("Intento de eliminar valoración de una película que no existe", r.status_code == HTTPStatus.NOT_FOUND):
+        print(r.status_code, r.text)
+
+    r = requests.delete(f"{CATALOG}/movies/abc/rate", headers=headers_alice)
+    if not ok("Intento de eliminar valoración de una película con id no numérico", r.status_code == HTTPStatus.BAD_REQUEST):
+        print(r.status_code, r.text)
+
     return movieids
 
 def teardown(headers_admin):
