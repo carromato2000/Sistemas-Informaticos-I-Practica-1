@@ -83,22 +83,30 @@ INSERT INTO ratings ("user", movie, score, comment) VALUES
 
 
 -- Carts
-INSERT INTO carts ("user", movie) VALUES 
-('a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6', 2),
-('a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6', 3),
-('b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7', 4),
-('c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8', 5),
-('c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8', 6),
-('d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9', 7),
-('e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0', 8);
+INSERT INTO carts ("user") VALUES 
+('a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6'),
+('b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7'),
+('c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8'),
+('d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9'),
+('e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0');
+
+-- Carts_Movies (relación muchos a muchos entre carritos y películas)
+INSERT INTO carts_movies (cart, movie) VALUES 
+(1, 2),
+(1, 3),
+(2, 4),
+(3, 5),
+(3, 6),
+(4, 7),
+(5, 8);
 
 -- Orders
-INSERT INTO "order" ("user", creationDate, state, precio) VALUES 
-('a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6', '2025-09-15 10:30:00', 'Completado', 18.98),
-('b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7', '2025-09-20 14:45:00', 'Completado', 16.98),
-('c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8', '2025-09-25 09:15:00', 'En proceso', 24.98),
-('d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9', '2025-10-01 16:20:00', 'En proceso', 15.98),
-('e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0', '2025-10-05 11:00:00', 'Pendiente', 30.97);
+INSERT INTO "order" ("user", creationDate, precio) VALUES 
+('a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6', '2025-09-15 10:30:00', 18.98),
+('b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7', '2025-09-20 14:45:00', 16.98),
+('c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8', '2025-09-25 09:15:00', 24.98),
+('d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9', '2025-10-01 16:20:00', 15.98),
+('e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0', '2025-10-05 11:00:00', 30.97);
 
 -- Orders_Movies
 INSERT INTO orders_movies ("order", movie) VALUES 

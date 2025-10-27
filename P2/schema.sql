@@ -39,16 +39,20 @@ CREATE TABLE ratings(
 );
 
 CREATE TABLE carts(
-    "user" CHAR(32) REFERENCES "user"(userid) ON DELETE CASCADE,
-    movie INT REFERENCES movie(movieid),
-    PRIMARY KEY ("user", movie)
+    cartid SERIAL PRIMARY KEY,
+    "user" CHAR(32) REFERENCES "user"(userid) ON DELETE CASCADE
+);
+
+CREATE TABLE carts_movies(
+    cart INT REFERENCES carts(cartid) ON DELETE CASCADE,
+    movie INT REFERENCES movie(movieid) ON DELETE CASCADE,
+    PRIMARY KEY (cart, movie)
 );
 
 CREATE TABLE "order"(
     orderid SERIAL PRIMARY KEY,
     "user" CHAR(32) REFERENCES "user"(userid) ON DELETE CASCADE,
     creationDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    state VARCHAR(50) NOT NULL,
     precio DECIMAL(10,2) NOT NULL DEFAULT 0
 );
 

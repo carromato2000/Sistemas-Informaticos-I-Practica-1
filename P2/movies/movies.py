@@ -39,16 +39,6 @@ async def get_movies():
     year = request.args.get('year')
     genre = request.args.get('genre')
     actor = request.args.get('actor')
-    if title is not None:
-        try:
-            title=str(title).title()
-        except ValueError:
-            return jsonify({"error": "Title must be a string"}), 400
-    if actor is not None:
-        try:
-            actor=str(actor).title()
-        except ValueError:
-            return jsonify({"error": "Actor must be a string"}), 400
     if year is not None:
         try:
             year = int(year)
@@ -56,6 +46,8 @@ async def get_movies():
             return jsonify({"error": "Year must be an integer"}), 400
     movies = await model.get_movies(title=title, year=year, genre=genre, actor=actor)
     return jsonify(movies), 200
+
+# Falta poder buscar peliculas por votos
 
 @app.route('/movies', methods=['PUT'])
 async def add_movie():
@@ -110,11 +102,48 @@ async def add_movie():
     
     try:
         movieid= await model.add_movie(title, year, genre, description, price)
-    except MovieAlreadyExistsError:
-        return jsonify({"error": "Movie already exists"}), 409
+    except AlreadyExistsError as e:
+        return jsonify({"error": e.message}), 409
     if movieid is None:
         return jsonify({"error": "Failed to add movie"}), 500
     return jsonify({"movieid": movieid}), 201
+
+@app.route('/movies/<movieid>', methods=['DELETE'])
+async def delete_movie(movieid):
+    """
+    Elimina una película del catálogo
+    """
+    # Verificar token y obtener el uid del usuario que hace la peticion
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}), 401
+    uid = request.headers.get('Authorization').split(' ')[1].split('.')[0]
+    if not await model.validate_admin(uid):
+        return jsonify({"error": "User is not admin"}), 401
+
+    try:
+        int(movieid)
+    except ValueError:
+        return jsonify({"error": "Invalid movie ID format"}), 400
+
+    try:
+        await model.delete_movie(int(movieid))
+    except NotFoundError as e:
+        return jsonify({"error": "Movie not found"}), 404
+    return jsonify({"message": "Movie deleted successfully"}), 200
+
+@app.route('/movies/<movieid>', methods=['GET'])
+async def get_movie(movieid):
+    """
+    Retorna los detalles de una película específica del catálogo
+    """
+    if not movieid.isdigit():
+        return jsonify({"error": "Invalid movie ID format"}), 400
+    movie= await model.get_movie_by_id(int(movieid))
+    if not movie:
+        return jsonify({"error": "Movie not found"}), 404
+    print("[DEBUG] Movie found:", movie)
+    return jsonify(movie), 200
+        
 
 @app.route('/actors', methods=['PUT'])
 async def add_actor():
@@ -140,8 +169,8 @@ async def add_actor():
         return jsonify({"error": "Birthdate must be in YYYY-MM-DD format"}), 400
     try:
         actorid= await model.add_actor(name, birthdate)
-    except ActorAlreadyExistsError:
-        return jsonify({"error": "Actor already exists"}), 409
+    except AlreadyExistsError as e:
+        return jsonify({"error": e.message}), 409
     if actorid is None:
         return jsonify({"error": "Failed to add actor"}), 500
     return jsonify({"actorid": actorid}), 201
@@ -174,48 +203,11 @@ async def get_actor(actorid):
 
     try:
         await model.delete_actor(int(actorid))
-    except ActorNotFoundError:
+    except NotFoundError as e:
         return jsonify({"error": "Actor not found"}), 404
     return jsonify({"message": "Actor deleted successfully"}), 200
 
-@app.route('/movies/<movieid>', methods=['DELETE'])
-async def delete_movie(movieid):
-    """
-    Elimina una película del catálogo
-    """
-    # Verificar token y obtener el uid del usuario que hace la peticion
-    if not validate_token():
-        return jsonify({"error": "Unauthorized"}), 401
-    uid = request.headers.get('Authorization').split(' ')[1].split('.')[0]
-    if not await model.validate_admin(uid):
-        return jsonify({"error": "User is not admin"}), 401
-
-    try:
-        int(movieid)
-    except ValueError:
-        return jsonify({"error": "Invalid movie ID format"}), 400
-
-    try:
-        await model.delete_movie(int(movieid))
-    except MovieNotFoundError:
-        return jsonify({"error": "Movie not found"}), 404
-    return jsonify({"message": "Movie deleted successfully"}), 200
-
-@app.route('/movies/<movieid>', methods=['GET'])
-async def get_movie(movieid):
-    """
-    Retorna los detalles de una película específica del catálogo
-    """
-    if not movieid.isdigit():
-        return jsonify({"error": "Invalid movie ID format"}), 400
-    movie= await model.get_movie_by_id(int(movieid))
-    if not movie:
-        return jsonify({"error": "Movie not found"}), 404
-    print("[DEBUG] Movie found:", movie)
-    return jsonify(movie), 200
-        
-
-@app.route('/movies/<movieid>', methods=['PUT'])
+@app.route('/movies/<movieid>/characters', methods=['PUT'])
 async def add_actor_to_movie(movieid):
     """
     Añade un actor a una película existente
@@ -243,10 +235,42 @@ async def add_actor_to_movie(movieid):
         return jsonify({"error": "Character name is required"}), 400
 
     try:
-        await model.add_actor_to_movie(movieid, actor_id)
-    except MovieNotFoundError:
-        return jsonify({"error": "Movie or actor not found"}), 404
+        await model.add_actor_to_movie(movieid, actor_id, character)
+    except NotFoundError as e:
+        return jsonify({"error": e.message}), 404
+    except AlreadyExistsError as e:
+        return jsonify({"error": e.message}), 409
     return jsonify({"message": "Actor added to movie successfully"}), 200
+
+@app.route('/movies/<movieid>/characters/<actor_id>', methods=['DELETE'])
+async def delete_actor_from_movie(movieid,actorid):
+    """
+    Elimina un actor de una película existente
+    """
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}), 401
+    uid = request.headers.get('Authorization').split(' ')[1].split('.')[0]
+    if not await model.validate_admin(uid):
+        return jsonify({"error": "User is not admin"}), 401
+    
+    try:
+        movieid = int(movieid)
+    except ValueError:
+        return jsonify({"error": "Invalid movie ID format"}), 400
+    
+    try:
+        actor_id = int(actor_id)
+    except ValueError:
+        return jsonify({"error": "Invalid actor ID format"}), 400
+    character = request.args.get('character')
+    if character is None:
+        return jsonify({"error": "Character name is required"}), 400
+    
+    try:
+        await model.delete_actor_from_movie(movieid, actor_id, character)
+    except NotFoundError as e:
+        return jsonify({"error": e.message}), 404
+    return jsonify({"message": "Actor removed from movie successfully"}), 200
 
 @app.route('/cart', methods=['GET'])
 async def get_cart():

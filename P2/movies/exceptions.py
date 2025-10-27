@@ -1,15 +1,12 @@
-class MovieAlreadyExistsError(Exception):
-    """Exception raised when trying to add a movie that already exists."""
-    pass
+class NotFoundError(Exception):
+    """Generic not found exception."""
+    
+    def __init__(self, message="Resource not found"):
+        self.message = message
+        super().__init__()
 
-class MovieNotFoundError(Exception):
-    """Exception raised when a movie is not found in the database."""
-    pass
-
-class ActorAlreadyExistsError(Exception):
-    """Exception raised when trying to add an actor that already exists."""
-    pass
-
-class ActorNotFoundError(Exception):
-    """Exception raised when an actor is not found in the database."""
-    pass
+class AlreadyExistsError(Exception):
+    """Exception raised when trying to add a resource that already exists."""
+    def __init__(self, message="Resource already exists"):
+        self.message = message
+        super().__init__()

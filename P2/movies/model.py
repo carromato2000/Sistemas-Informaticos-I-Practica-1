@@ -57,7 +57,7 @@ async def add_movie(title: str, year: int, genre: str, description: str, price: 
             await conn.commit()
             return row._mapping["movieid"] if row else None
         except IntegrityError:
-            raise MovieAlreadyExistsError()
+            raise AlreadyExistsError("Movie already exists")
         
 async def delete_movie(movieid: int):
     async with engine.connect() as conn:
@@ -66,7 +66,7 @@ async def delete_movie(movieid: int):
         ), {"movieid": movieid})
         movie = result.fetchone()
         if not movie:
-            raise MovieNotFoundError()
+            raise NotFoundError("Movie not found")
         
         await conn.execute(text(
             "DELETE FROM movie WHERE movieid = :movieid"
@@ -92,7 +92,7 @@ async def add_actor(name: str, birthdate):
             await conn.commit()
             return row._mapping["actorid"] if row else None
         except IntegrityError:
-            raise ActorAlreadyExistsError()
+            raise AlreadyExistsError("Actor already exists")
 
 async def delete_actor(actorid: int):
     async with engine.connect() as conn:
@@ -101,23 +101,45 @@ async def delete_actor(actorid: int):
         ), {"actorid": actorid})
         actor = result.fetchone()
         if not actor:
-            raise ActorNotFoundError()
+            raise NotFoundError("Actor not found")
         
         await conn.execute(text(
             "DELETE FROM actor WHERE actorid = :actorid"
         ), {"actorid": actorid})
         await conn.commit()
 
-async def add_actor_to_movie(actorid: int, movieid: int):
+async def add_actor_to_movie(movieid: int, actorid: int, character: str = None):
+    async with engine.connect() as conn:
+        result = await conn.execute(text(
+            "SELECT * FROM movie WHERE movieid = :movieid"
+        ), {"movieid": movieid})
+        movie = result.fetchone()
+        if not movie:
+            raise NotFoundError("Movie not found")
+        result = await conn.execute(text(
+            "SELECT * FROM actor WHERE actorid = :actorid"
+        ), {"actorid": actorid})
+        actor = result.fetchone()
+        if not actor:
+            raise NotFoundError("Actor not found")
+        try:
+            await conn.execute(text(
+                "INSERT INTO casts (movie,actor, character) "
+                "VALUES (:movieid, :actorid, :character)"
+            ), {"movieid": movieid, "actorid": actorid, "character": character})        
+            await conn.commit()
+        except IntegrityError:
+            raise AlreadyExistsError("Character already exists in movie")
+        
+async def delete_actor_from_movie(movieid: int, actorid: int, character: str = None):
     async with engine.connect() as conn:
         try:
             await conn.execute(text(
-                "INSERT INTO casts (actor, movie) "
-                "VALUES (:actorid, :movieid)"
-            ), {"actorid": actorid, "movieid": movieid})        
+                "DELETE FROM casts WHERE movie = :movieid AND actor = :actorid"
+            ), {"movieid": movieid, "actorid": actorid})
             await conn.commit()
         except IntegrityError:
-            raise MovieNotFoundError()
+            raise NotFoundError("Character not found in movie")
 
 async def get_movie_by_id(movieid):
     async with engine.connect() as conn:

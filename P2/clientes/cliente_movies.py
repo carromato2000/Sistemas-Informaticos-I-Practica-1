@@ -177,13 +177,80 @@ def main(headers_alice, headers_admin):
     else:
         print(r.status_code, r.text)
 
+    r = requests.delete(f"{CATALOG}/actors/hola", headers=headers_admin)
+    if ok("Intento de eliminar actor con ID no numérico", r.status_code == HTTPStatus.BAD_REQUEST):
+        pass
+    else:
+        print(r.status_code, r.text)
+
+    r = requests.get(f"{CATALOG}/movies", params={"year" : 2001}, headers=headers_alice)
+    movieid = r.json()[0]['movieid']
+    r = requests.put(f"{CATALOG}/movies/{movieid}",params = {"actor_id": 999999, "character": "Saruman"}, headers=headers_admin)
+    if ok("Asignar actor que no existe a una pelicula", r.status_code == HTTPStatus.NOT_FOUND):
+        pass
+    else:
+        print(r.status_code, r.text)
+    r = requests.put(f"{CATALOG}/actors", params={"name": "Christopher Lee", "birthdate": "1922-05-27"},headers=headers_admin)
+    if ok("Añadir actor Christopher Lee por usuario admin", r.status_code == HTTPStatus.CREATED and r.json(),silent = True):
+        actor_id = r.json()['actorid']
+    else:
+        print(r.status_code, r.text)
+
+    r = requests.put(f"{CATALOG}/movies/abc",params = {"actor_id": 2, "character": "Saruman"}, headers=headers_admin)
+    if ok("Asignar un actor a una película con id no numérico", r.status_code == HTTPStatus.BAD_REQUEST):
+        pass
+    else:
+        print(r.status_code, r.text)
+
+    r = requests.put(f"{CATALOG}/movies/{movieid}",params = {"actor_id": "hola", "character": "Saruman"}, headers=headers_admin)
+    if ok("Asignar actor con id no numérico a una pelicula", r.status_code == HTTPStatus.BAD_REQUEST):
+        pass
+    else:
+        print(r.status_code, r.text)
+
+    r = requests.put(f"{CATALOG}/movies/{movieid}",params = {"actor_id": actor_id, "character": "Saruman"}, headers=headers_admin)
+    if ok("Asignar actor existente a una pelicula", r.status_code == HTTPStatus.OK):
+        pass
+    else:
+        print(r.status_code, r.text)
+    
+    r = requests.put(f"{CATALOG}/movies/{movieid}",params = {"actor_id": actor_id, "character": "Saruman"}, headers=headers_admin)
+    if ok("Asignar mismo actor nuevamente a una pelicula", r.status_code == HTTPStatus.CONFLICT):
+        pass
+    else:
+        print(r.status_code, r.text)
+
+    r = requests.put(f"{CATALOG}/movies/{movieid}",headers=headers_alice)
+    if ok("Intento de añadir un actor a una película por un usuario no admin", r.status_code == HTTPStatus.UNAUTHORIZED):
+        pass
+    else:
+        print(r.status_code, r.text)
+
+
+    r = requests.put(f"{CATALOG}/movies/999999",params = {"actor_id": actor_id, "character": "Saruman"}, headers=headers_admin)
+    if ok("Asignar actor a una pelicula que no existe", r.status_code == HTTPStatus.NOT_FOUND):
+        pass
+    else:
+        print(r.status_code, r.text)
+
+    r = requests.delete(f"{CATALOG}/movies/{movieid}/{actor_id}",params = {"character": "Saruman"}, headers=headers_admin)
+    if ok("Eliminar actor de una película", r.status_code == HTTPStatus.OK):
+        pass
+    else:
+        print(r.status_code, r.text)
 
     return movieids
+
+def teardown(headers_admin):
+    r = requests.get(f"{CATALOG}/actors", params={"name": "Christopher Lee"},headers=headers_admin)
+    actor_id = r.json()[0]['actorid']
+    r = requests.delete(f"{CATALOG}/actors/{actor_id}", headers=headers_admin)
 
 if __name__ == "__main__":
     # Recuperar el usuario alice para obtener su token
     headers_alice, uid_alice, headers_admin, uid_admin = cliente_users.setup(silent = True)
     main(headers_alice, headers_admin)
+    teardown(headers_admin)
     cliente_users.teardown(headers_admin, uid_alice, silent = True)
 
     from urls import test_passed, test_failed
