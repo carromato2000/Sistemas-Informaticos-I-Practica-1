@@ -21,12 +21,12 @@ def validate_token():
         auth_header = auth_header[7:]  # Elimina "Bearer "
 
     try:
-        user_id , token = auth_header.split('.')
+        userid , token = auth_header.split('.')
     except ValueError:
         return False
     
     # Genera el token esperado para este usuario
-    expected_token = str(uuid.uuid5(secret_uuid, str(user_id)))
+    expected_token = str(uuid.uuid5(secret_uuid, str(userid)))
     
     return token == expected_token
 
@@ -47,7 +47,82 @@ async def get_movies():
     movies = await model.get_movies(title=title, year=year, genre=genre, actor=actor)
     return jsonify(movies), 200
 
-# Falta poder buscar peliculas por votos
+@app.route('/movies/<movieid>/rate', methods=['PUT'])
+async def rate_movie(movieid):
+    """
+    Permite a un usuario calificar una película
+    """
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}), 401
+    headers = request.headers.get('Authorization')
+    userid = headers.split(' ')[1].split('.')[0]
+
+    try:
+        movieid = int(movieid)
+    except ValueError:
+        return jsonify({"error": "Invalid movie ID format"}), 400
+
+    score = request.args.get('score')
+    if score is None:
+        return jsonify({"error": "Score data is empty"}), 400
+    try:
+        score = int(score)
+        if score < 1 or score > 5:
+            return jsonify({"error": "Rating must be between 1 and 5"}), 400
+    except ValueError:
+        return jsonify({"error": "Rating must be an integer"}), 400
+    
+    data= await request.get_json()
+    if data is None:
+        comment= None
+    else:
+        comment= data.get("comment")
+    try:
+        success= await model.rate_movie(userid, movieid, score, comment)
+    except NotFoundError as e:
+        return jsonify({"error": e.message}), 404
+    except AlreadyExistsError as e:
+        return jsonify({"error": e.message}), 409
+    return jsonify({"message": "Rating submitted successfully"}), 200
+
+@app.route('/movies/top', methods=['GET'])
+async def get_top_movies():
+    """
+    Retorna las películas mejor calificadas del catálogo
+    """
+    top = request.args.get('top')
+    if top is not None:
+        try:
+            top = int(top)
+            if top <= 0:
+                return jsonify({"error": "Top must be a positive integer"}), 400
+            movies = await model.get_top_movies(top=top)
+        except ValueError:
+            return jsonify({"error": "Top must be a positive integer"}), 400
+    else:
+        movies = await model.get_top_movies()
+    return jsonify(movies), 200
+
+@app.route('/movies/<movieid>/rate', methods=['DELETE'])
+async def delete_rating(movieid):
+    """
+    Permite a un usuario eliminar su calificación de una película
+    """
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}), 401
+    headers = request.headers.get('Authorization')
+    userid = headers.split(' ')[1].split('.')[0]
+
+    try:
+        movieid = int(movieid)
+    except ValueError:
+        return jsonify({"error": "Invalid movie ID format"}), 400
+
+    try:
+        await model.delete_rating(userid, movieid)
+    except NotFoundError as e:
+        return jsonify({"error": e.message}), 404
+    return jsonify({"message": "Rating deleted successfully"}), 200
 
 @app.route('/movies', methods=['PUT'])
 async def add_movie():
@@ -280,8 +355,8 @@ async def get_cart():
     if not validate_token():
         return jsonify({"error": "Unauthorized"}), 401
     headers = request.headers.get('Authorization')
-    user_id = headers.split(' ')[1].split('.')[0]
-    movie= await model.get_carts(user_id)
+    userid = headers.split(' ')[1].split('.')[0]
+    movie= await model.get_carts(userid)
    
     return jsonify(movie), 200
 
@@ -297,8 +372,8 @@ async def add_movie_to_cart(movieid):
     if not movieid.isdigit():
         return jsonify({"error": "Invalid movie ID format"}), 400
     headers = request.headers.get('Authorization')
-    user_id = headers.split(' ')[1].split('.')[0]
-    movie_not_in_cart=await model.add_movie_to_cart(user_id, int(movieid))
+    userid = headers.split(' ')[1].split('.')[0]
+    movie_not_in_cart=await model.add_movie_to_cart(userid, int(movieid))
     if not movie_not_in_cart:
         return jsonify({"error": "Movie already in cart"}), 409
     else:
@@ -316,8 +391,8 @@ async def delete_movie_from_cart(movieid):
     if not movieid.isdigit():
         return jsonify({"error": "Invalid movie ID format"}), 400
     headers = request.headers.get('Authorization')
-    user_id = headers.split(' ')[1].split('.')[0]
-    movie_in_cart=await model.delete_movie_from_cart(user_id, int(movieid))
+    userid = headers.split(' ')[1].split('.')[0]
+    movie_in_cart=await model.delete_movie_from_cart(userid, int(movieid))
     if not movie_in_cart:
         return jsonify({"error": "Movie not in cart"}), 404
     else:
@@ -332,8 +407,8 @@ async def checkout_cart():
     if not validate_token():
         return jsonify({"error": "Unauthorized"}), 401
     headers = request.headers.get('Authorization')
-    user_id = headers.split(' ')[1].split('.')[0]
-    order= await model.checkout_cart(user_id)
+    userid = headers.split(' ')[1].split('.')[0]
+    order= await model.checkout_cart(userid)
     if order == -1:
         return jsonify({"error": "User not found"}), 404
     elif order == -2:
@@ -364,7 +439,7 @@ async def add_credit():
     if not validate_token():
         return jsonify({"error": "Unauthorized"}), 401
     headers = request.headers.get('Authorization')
-    user_id = headers.split(' ')[1].split('.')[0]
+    userid = headers.split(' ')[1].split('.')[0]
     data= await request.get_json()
     amount_data= data.get("amount")
     
@@ -377,7 +452,7 @@ async def add_credit():
     if amount <= 0:
         return jsonify({"error": "Amount must be positive"}), 400
     
-    new_balance= await model.update_credit(user_id, amount)
+    new_balance= await model.update_credit(userid, amount)
     if new_balance == -1:
         return jsonify({"error": "User not found"}), 404
     return jsonify({"new_credit": f"{new_balance}"}), 200
@@ -387,7 +462,7 @@ async def set_credit(amount):
     if not validate_token():
         return jsonify({"error": "Unauthorized"}), 401
     headers = request.headers.get('Authorization')
-    user_id = headers.split(' ')[1].split('.')[0]
+    userid = headers.split(' ')[1].split('.')[0]
     try:
         amount_value = float(amount)
     except ValueError:
@@ -395,7 +470,7 @@ async def set_credit(amount):
     if amount_value < 0:
         return jsonify({"error": "Amount must be non-negative"}), 400
     
-    current_balance= await model.set_credit(user_id, amount_value)
+    current_balance= await model.set_credit(userid, amount_value)
     if current_balance == -1:
         return jsonify({"error": "User not found"}), 404
     

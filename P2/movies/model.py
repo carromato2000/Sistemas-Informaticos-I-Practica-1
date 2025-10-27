@@ -45,6 +45,18 @@ async def get_movies(title = None, year = None, genre = None, actor = None):
             ), {"title": title, "year": year, "genre": genre, "actor": actor})
         return [dict(row._mapping) for row in result.fetchall()]
     
+async def get_top_movies(top: int = 10):
+    async with engine.connect() as conn:
+        result = await conn.execute(text(
+            "SELECT m.*, ROUND(AVG(r.score), 2) AS average_score "
+            "FROM movie m "
+            "JOIN ratings r ON m.movieid = r.movie "
+            "GROUP BY m.movieid "
+            "ORDER BY average_score DESC "
+            "LIMIT :top"
+        ), {"top": top})
+        return [dict(row._mapping) for row in result.fetchall()]
+    
 async def add_movie(title: str, year: int, genre: str, description: str, price: float):
     async with engine.connect() as conn:
         try:
@@ -72,6 +84,33 @@ async def delete_movie(movieid: int):
             "DELETE FROM movie WHERE movieid = :movieid"
         ), {"movieid": movieid})
         await conn.commit()
+
+async def rate_movie(userid: str, movieid: int, score: int, comment: str = None):
+    async with engine.connect() as conn:
+        result = await conn.execute(text(
+            "SELECT * FROM movie WHERE movieid = :movieid"
+        ), {"movieid": movieid})
+        movie = result.fetchone()
+        if not movie:
+            raise NotFoundError("Movie not found")
+        # Si hay excepcion aqui, SQLAlchemy devolvera error 500, y eso es correcto
+        # Porque acamabos de ver que la pelicula existe y el usuario se verifica antes
+        # Ademas score y comment son validados en la capa de servicio
+        await conn.execute(text(
+            "INSERT INTO ratings (\"user\", movie, score, comment) "
+            "VALUES (:userid, :movieid, :score, :comment) "
+            "ON CONFLICT (\"user\", movie) DO UPDATE SET score = :score, comment = :comment"
+        ), {"userid": userid, "movieid": movieid, "score": score, "comment": comment})
+        await conn.commit()
+
+async def delete_rating(userid: str, movieid: int):
+    async with engine.connect() as conn:
+        result = await conn.execute(text(
+            "DELETE FROM ratings WHERE \"user\" = :userid AND movie = :movieid"
+        ), {"userid": userid, "movieid": movieid})
+        await conn.commit()
+        if result.rowcount == 0:
+            raise NotFoundError("Rating not found")
 
 async def get_actors(name):
     async with engine.connect() as conn:
