@@ -45,6 +45,18 @@ async def get_movies(title = None, year = None, genre = None, actor = None):
             ), {"title": title, "year": year, "genre": genre, "actor": actor})
         return [dict(row._mapping) for row in result.fetchall()]
     
+async def get_top_movies(top: int = 10):
+    async with engine.connect() as conn:
+        result = await conn.execute(text(
+            "SELECT m.*, ROUND(AVG(r.score), 2) AS average_score "
+            "FROM movie m "
+            "JOIN ratings r ON m.movieid = r.movie "
+            "GROUP BY m.movieid "
+            "ORDER BY average_score DESC "
+            "LIMIT :top"
+        ), {"top": top})
+        return [dict(row._mapping) for row in result.fetchall()]
+    
 async def add_movie(title: str, year: int, genre: str, description: str, price: float):
     async with engine.connect() as conn:
         try:

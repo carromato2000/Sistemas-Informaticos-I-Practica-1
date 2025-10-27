@@ -85,6 +85,24 @@ async def rate_movie(movieid):
         return jsonify({"error": e.message}), 409
     return jsonify({"message": "Rating submitted successfully"}), 200
 
+@app.route('/movies/top', methods=['GET'])
+async def get_top_movies():
+    """
+    Retorna las películas mejor calificadas del catálogo
+    """
+    top = request.args.get('top')
+    if top is not None:
+        try:
+            top = int(top)
+            if top <= 0:
+                return jsonify({"error": "Top must be a positive integer"}), 400
+            movies = await model.get_top_movies(top=top)
+        except ValueError:
+            return jsonify({"error": "Top must be a positive integer"}), 400
+    else:
+        movies = await model.get_top_movies()
+    return jsonify(movies), 200
+
 @app.route('/movies/<movieid>/rate', methods=['DELETE'])
 async def delete_rating(movieid):
     """

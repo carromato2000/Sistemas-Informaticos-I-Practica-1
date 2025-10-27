@@ -31,12 +31,41 @@ def main(headers_alice, headers_admin):
             for movie in data:
                 print(f"\t[{movie['movieid']}] {movie['title']}")
                 movieids.append(movie['movieid'])
+    else:
+        print(r.status_code, r.text)
 
     r = requests.get(f"{CATALOG}/movies", params={"title": "No debe haber pelis con este título"}, headers=headers_alice)
-    ok("Búsqueda fallida de películas por título", r.status_code == HTTPStatus.OK and not r.json())
+    if not ok("Búsqueda fallida de películas por título", r.status_code == HTTPStatus.OK and not r.json()):
+        print(r.status_code, r.text)
 
     r = requests.get(f"{CATALOG}/movies", params={"title": ""}, headers=headers_alice)
-    ok("Búsqueda de películas con título vacío:", r.status_code == HTTPStatus.OK and not r.json())
+    if not ok("Búsqueda de películas con título vacío:", r.status_code == HTTPStatus.OK and not r.json()):
+        print(r.status_code, r.text)
+
+    r = requests.get(f"{CATALOG}/movies/top", params={"top":5}, headers=headers_alice)
+    if ok("Obtener top 5 películas mejor valoradas", r.status_code == HTTPStatus.OK and len(r.json()) == 5):
+        data = r.json()
+        if data:
+            for movie in data:
+                print(f"\t[{movie['movieid']}] {movie['title']} - Puntuación media: {movie['average_score']}")
+    else:
+        print(r.status_code, r.text)
+
+    r = requests.get(f"{CATALOG}/movies/top", params={"top":0}, headers=headers_alice)
+    if not ok("Intento de obtener top 0 películas mejor valoradas", r.status_code == HTTPStatus.BAD_REQUEST):
+        print(r.status_code, r.text)
+    
+    r = requests.get(f"{CATALOG}/movies/top", params={"top":"abc"}, headers=headers_alice)
+    if not ok("Intento de obtener top con valor no numérico", r.status_code == HTTPStatus.BAD_REQUEST):
+        print(r.status_code, r.text)
+    
+    r = requests.get(f"{CATALOG}/movies/top", headers=headers_alice)
+    if not ok("Intento de obtener top sin especificar número de películas", r.status_code == HTTPStatus.OK and len(r.json())==10):
+        print(r.status_code, r.text)
+    
+    r = requests.get(f"{CATALOG}/movies/top", params={}, headers=headers_alice)
+    if not ok("Intento de obtener top sin parámetros", r.status_code == HTTPStatus.OK and len(r.json())==10):
+        print(r.status_code, r.text)
 
     r = requests.put(f"{CATALOG}/movies", params={"title": "Nueva Película", "year": 2024, "genre": "Drama", "price" : 9.99},
                      data ={"description": "Descripción de la nueva película"}, headers=headers_alice)
