@@ -25,6 +25,9 @@ def main(headers_alice, movieids):
     r=requests.post(f"{CATALOG}/cart/checkout", headers=headers_alice)
     ok("Checkout de un carrito vacío", r.status_code == HTTPStatus.NOT_FOUND)
     
+    r=requests.delete(f"{CATALOG}/cart", headers=headers_alice)
+    ok("Vaciar un carrito no existente", r.status_code == HTTPStatus.NOT_FOUND)
+    
     for movieid in movieids:
         r = requests.put(f"{CATALOG}/cart/{movieid}", headers=headers_alice)
         if ok(f"Añadir película con ID [{movieid}] al carrito", r.status_code == HTTPStatus.OK):
@@ -34,7 +37,15 @@ def main(headers_alice, movieids):
                 if data:
                     for movie in data:
                         print(f"\t[{movie['movieid']}] {movie['title']} - {movie['price']}")
-                        
+    r=requests.delete(f"{CATALOG}/cart", headers=headers_alice)
+    ok("Vaciar el carrito", r.status_code == HTTPStatus.OK)
+    r=requests.get(f"{CATALOG}/cart", headers=headers_alice)
+    if ok("Obtener carrito vacío después de vaciarlo", r.status_code == HTTPStatus.OK):
+        data = r.json()
+        if not data:
+            print("\tEl carrito está vacío.")
+    for movieid in movieids:
+        r = requests.put(f"{CATALOG}/cart/{movieid}", headers=headers_alice)
     token_invalid="invalid_token"
     headers_invalid={"Authorization": f"Bearer {token_invalid}"}
     r=requests.get(f"{CATALOG}/cart", headers=headers_invalid)
@@ -111,6 +122,16 @@ def main(headers_alice, movieids):
     if ok("Checkout del carrito", r.status_code == HTTPStatus.OK and r.json()):
         data = r.json()
         print(f"\tPedido {data['orderid']} creado correctamente:")
+        
+        r=requests.get(f"{CATALOG}/orders", headers=headers_alice)
+        if ok("Obtener lista de pedidos del usuario", r.status_code == HTTPStatus.OK and r.json()):
+            orders = r.json()
+            print("\tLista de pedidos del usuario:")
+            for order in orders:
+                print(f"\t- Pedido ID: {order['orderid']}\n\t\tFecha: {order['date']}\n\t\tTotal: {order['total']}")
+                print(f"\t\tUser ID: {order['user']['userid']}\n\t\tNombre: {order['user']['name']}")
+                for movie in order['movies']:
+                    print(f"\t\t  - [{movie['movieid']}] {movie['title']} ({movie['price']})")    
 
         r = requests.get(f"{CATALOG}/orders/{data['orderid']}", headers=headers_alice)
         if ok(f"Recuperar datos del pedido {data['orderid']}", r.status_code == HTTPStatus.OK and r.json()):

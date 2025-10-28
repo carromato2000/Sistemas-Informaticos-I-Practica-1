@@ -360,6 +360,21 @@ async def get_cart():
    
     return jsonify(movie), 200
 
+@app.route('/cart', methods=['DELETE'])
+async def clear_cart():
+    """
+    Elimina todo el contenido del carrito de compras
+    """
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}), 401
+    headers = request.headers.get('Authorization')
+    userid = headers.split(' ')[1].split('.')[0]
+    result=await model.clear_cart(userid)
+    if result == -1:
+        return jsonify({"error": "Cart doesn't exist"}), 404
+    else:
+        return jsonify({"message": "Cart cleared successfully"}), 200
+
 @app.route('/cart/<movieid>', methods=['PUT'])
 async def add_movie_to_cart(movieid):
     """
@@ -419,6 +434,18 @@ async def checkout_cart():
         return jsonify({"error": "Order creation failed"}), 500
     else:
         return jsonify(order), 200
+    
+@app.route('/orders', methods=['GET'])
+async def get_orders():
+    """
+    Retorna los pedidos realizados por el usuario
+    """
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}), 401
+    headers = request.headers.get('Authorization')
+    userid = headers.split(' ')[1].split('.')[0]
+    orders= await model.get_orders_by_userid(userid)
+    return jsonify(orders), 200
 
 @app.route('/orders/<orderid>', methods=['GET'])
 async def get_order(orderid):

@@ -197,6 +197,24 @@ async def get_carts(user):
             "WHERE carts.\"user\" = :user"
         ), {"user": user})
         return [dict(row._mapping) for row in result.fetchall()]
+    
+async def clear_cart(user):
+    async with engine.connect() as conn:
+        result= await conn.execute(text(
+            "SELECT cartid FROM carts WHERE \"user\" = :user"
+        ), {"user": user})
+        cart=result.fetchone()
+        if not cart:
+            return -1
+        
+        await conn.execute(text(
+            "DELETE FROM carts_movies WHERE cart = (SELECT cartid FROM carts WHERE \"user\" = :user)"
+        ), {"user": user})
+        await conn.execute(text(
+            "DELETE FROM carts WHERE \"user\" = :user"
+        ), {"user": user})
+        await conn.commit()
+        return 0
 
 async def add_movie_to_cart(user, movieid):
     if movieid is None:
@@ -271,6 +289,42 @@ async def update_credit(userid: str, amount: float):
         await conn.commit()
         
         return new_balance
+
+async def get_orders_by_userid(userid: str):
+    async with engine.connect() as conn:
+        user_data = await conn.execute(text(
+            "SELECT * FROM \"user\" WHERE userid = :userid"
+        ), {"userid": userid})
+        user = user_data.fetchone()
+        if not user:
+            return None
+        result = await conn.execute(text(
+            "SELECT o.orderid, o.creationDate AS \"creationDate\",o.precio "
+            "FROM \"order\" o "
+            "WHERE o.\"user\" = :userid"
+        ), {"userid": userid})
+        orders = []
+        for row in result.fetchall():
+            order_details = {
+                "orderid": row._mapping["orderid"],
+                "date": row._mapping["creationDate"],
+                "total": row._mapping["precio"],
+                "user": {
+                    "userid": user._mapping["userid"],
+                    "name": user._mapping["name"],
+                    "balance": float(user._mapping["balance"])
+                },
+                "movies": []
+            }
+            movies_result = await conn.execute(text(
+                "SELECT m.movieid, m.title, m.year, m.genre, m.price "
+                "FROM movie m "
+                "JOIN orders_movies om ON m.movieid = om.movie "
+                "WHERE om.\"order\" = :orderid"
+            ), {"orderid": row._mapping["orderid"]})
+            order_details["movies"] = [dict(movie_row._mapping) for movie_row in movies_result.fetchall()]
+            orders.append(order_details)
+        return orders
     
 async def get_order_by_id(orderid: int):
     async with engine.connect() as conn:
@@ -280,22 +334,22 @@ async def get_order_by_id(orderid: int):
             "JOIN \"user\" u ON o.\"user\" = u.userid "
             "WHERE o.orderid = :orderid"
         ), {"orderid": orderid})
-        order_row = result.fetchone()
+        row = result.fetchone()
         
-        if not order_row:
+        if not row:
             return None
         
         order_details = {
-            "orderid": order_row.orderid,
-            "date": order_row.creationDate,
-            "total": order_row.precio,
-            "user": {
-                "userid": order_row.userid,
-                "name": order_row.name,
-                "balance": float(order_row.balance)
-            },
-            "movies": []
-        }
+                "orderid": row._mapping["orderid"],
+                "date": row._mapping["creationDate"],
+                "total": row._mapping["precio"],
+                "user": {
+                    "userid": row._mapping["userid"],
+                    "name": row._mapping["name"],
+                    "balance": float(row._mapping["balance"])
+                },
+                "movies": []
+            }
         
         movies_result = await conn.execute(text(
             "SELECT m.movieid, m.title, m.year, m.genre, m.price "
@@ -304,7 +358,7 @@ async def get_order_by_id(orderid: int):
             "WHERE om.\"order\" = :orderid"
         ), {"orderid": orderid})
         
-        order_details["movies"] = [dict(row._mapping) for row in movies_result.fetchall()]
+        order_details["movies"] = [dict(mrow._mapping) for mrow in movies_result.fetchall()]
         
         return order_details
     
