@@ -22,6 +22,14 @@ async def validate_admin(uid: str):
         ), {"userid": uid})
         user = result.fetchone()
         return user and user.name == 'admin'
+    
+async def get_user_id(apiid: str):
+    async with engine.connect() as conn:
+        result = await conn.execute(text(
+            "SELECT userid FROM \"user\" WHERE apiid = :apiid"
+        ), {"apiid": apiid})
+        row = result.fetchone()
+        return row._mapping["userid"] if row else None
 
 async def get_movies(title = None, year = None, genre = None, actor = None):
     async with engine.connect() as conn:
@@ -96,6 +104,7 @@ async def rate_movie(userid: str, movieid: int, score: int, comment: str = None)
         # Si hay excepcion aqui, SQLAlchemy devolvera error 500, y eso es correcto
         # Porque acamabos de ver que la pelicula existe y el usuario se verifica antes
         # Ademas score y comment son validados en la capa de servicio
+        userid= await get_user_id(userid)
         await conn.execute(text(
             "INSERT INTO ratings (\"user\", movie, score, comment) "
             "VALUES (:userid, :movieid, :score, :comment) "
@@ -105,6 +114,7 @@ async def rate_movie(userid: str, movieid: int, score: int, comment: str = None)
 
 async def delete_rating(userid: str, movieid: int):
     async with engine.connect() as conn:
+        userid= await get_user_id(userid)
         result = await conn.execute(text(
             "DELETE FROM ratings WHERE \"user\" = :userid AND movie = :movieid"
         ), {"userid": userid, "movieid": movieid})

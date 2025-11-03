@@ -23,7 +23,8 @@ CREATE TABLE casts(
 );
 
 CREATE TABLE "user"(
-    userid CHAR(32) PRIMARY KEY,    -- Usamos CHAR(32) porque guardaremos el UID haciendo UID.hex()
+    userid SERIAL PRIMARY KEY,
+    apiid CHAR(32) NOT NULL UNIQUE,    -- Usamos CHAR(32) porque guardaremos el UID haciendo UID.hex()
     name VARCHAR(255) NOT NULL UNIQUE, -- El nombre de usuario debe ser unico
     password VARCHAR(255) NOT NULL, -- Almacenaremos el hash de la contraseña
     balance REAL NOT NULL DEFAULT 0
