@@ -1,19 +1,20 @@
 -- Populate database with sample data
 
 -- Movies
-INSERT INTO movie (title, year, genre, price, description) VALUES 
-('El Padrino', 1972, 'Drama', 9.99, 'La historia de la familia Corleone, una de las más poderosas familias mafiosas de Nueva York.'),
-('Pulp Fiction', 1994, 'Thriller', 8.99, 'Una serie de historias entrelazadas que giran en torno al crimen en Los Ángeles.'),
-('El Señor de los Anillos: La Comunidad del Anillo', 2001, 'Fantasía', 12.99, 'Un hobbit llamado Frodo emprende un viaje para destruir un anillo poderoso.'),
-('matrix', 1999, 'Ciencia Ficción', 7.99, 'Un hacker descubre la verdadera naturaleza de su realidad y su papel en la guerra contra sus controladores.'),
-('Titanic', 1997, 'Romance', 6.99, 'La trágica historia de amor entre Jack y Rose a bordo del fatídico RMS Titanic.'),
-('El Rey León', 1994, 'Animación', 5.99, 'La aventura de un joven león llamado Simba que lucha por reclamar su lugar como rey.'),
-('Parásitos', 2019, 'Drama', 14.99, 'Una familia pobre se infiltra en la vida de una familia rica, desencadenando una serie de eventos inesperados.'),
-('Interestelar', 2014, 'Ciencia Ficción', 11.99, 'Un grupo de exploradores viaja a través de un agujero de gusano en el espacio en un intento por asegurar la supervivencia de la humanidad.'),
-('Regreso al Futuro', 1985, 'Ciencia Ficción', 7.99, 'Un adolescente viaja en el tiempo y debe asegurarse de que sus padres se conozcan para no desaparecer.'),
-('El Laberinto del Fauno', 2006, 'Fantasía', 9.99, 'Una joven se adentra en un mundo de fantasía para escapar de la realidad de la posguerra en España.'),
-('Venom', 2018, 'Acción', 10.99, 'Un periodista se convierte en el huésped de un simbionte alienígena que le otorga superpoderes.'),
-('Mad Max: Fury Road', 2015, 'Acción', 10.99 , 'Una mujer se rebela contra un gobernante tiránico en busca de su patria con la ayuda de un grupo de prisioneras');
+-- Added stock and rating values (stock INT, rating DECIMAL(2,1))
+INSERT INTO movie (title, year, genre, price, description, stock, rating) VALUES 
+('El Padrino', 1972, 'Drama', 9.99, 'La historia de la familia Corleone, una de las más poderosas familias mafiosas de Nueva York.', 10, 5.0),
+('Pulp Fiction', 1994, 'Thriller', 8.99, 'Una serie de historias entrelazadas que giran en torno al crimen en Los Ángeles.', 8, 5.0),
+('El Señor de los Anillos: La Comunidad del Anillo', 2001, 'Fantasía', 12.99, 'Un hobbit llamado Frodo emprende un viaje para destruir un anillo poderoso.', 5, 5.0),
+('matrix', 1999, 'Ciencia Ficción', 7.99, 'Un hacker descubre la verdadera naturaleza de su realidad y su papel en la guerra contra sus controladores.', 12, 4.5),
+('Titanic', 1997, 'Romance', 6.99, 'La trágica historia de amor entre Jack y Rose a bordo del fatídico RMS Titanic.', 7, 4.2),
+('El Rey León', 1994, 'Animación', 5.99, 'La aventura de un joven león llamado Simba que lucha por reclamar su lugar como rey.', 15, 4.7),
+('Parásitos', 2019, 'Drama', 14.99, 'Una familia pobre se infiltra en la vida de una familia rica, desencadenando una serie de eventos inesperados.', 6, 4.6),
+('Interestelar', 2014, 'Ciencia Ficción', 11.99, 'Un grupo de exploradores viaja a través de un agujero de gusano en el espacio en un intento por asegurar la supervivencia de la humanidad.', 9, 4.9),
+('Regreso al Futuro', 1985, 'Ciencia Ficción', 7.99, 'Un adolescente viaja en el tiempo y debe asegurarse de que sus padres se conozcan para no desaparecer.', 11, 4.1),
+('El Laberinto del Fauno', 2006, 'Fantasía', 9.99, 'Una joven se adentra en un mundo de fantasía para escapar de la realidad de la posguerra en España.', 4, 4.3),
+('Venom', 2018, 'Acción', 10.99, 'Un periodista se convierte en el huésped de un simbionte alienígena que le otorga superpoderes.', 13, 3.2),
+('Mad Max: Fury Road', 2015, 'Acción', 10.99 , 'Una mujer se rebela contra un gobernante tiránico en busca de su patria con la ayuda de un grupo de prisioneras', 3, 4.0);
 
 -- Actors
 INSERT INTO actor (name, birthdate) VALUES 
@@ -58,13 +59,14 @@ INSERT INTO casts (movie, actor, character) VALUES
 --usuario4: safePassword
 --usuario5: secretCode123
 --admin: admin
-INSERT INTO "user" (apiid, name, password, balance) VALUES 
-('a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6', 'usuario1', '$2b$12$wvaPF93z53ByVUtgIyOkf.Se6wgbmoO7g7CtKCW1haThka1.Y51qi', 50.00),
-('b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7', 'usuario2', '$2b$12$YYj0hAAJLXIPuKR//tWHZOO5cZ9uC4Z7VAJMLofZTFaiD7JUqq/2C', 75.50),
-('c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8', 'usuario3', '$2b$12$XDPo9HUfvAjzodqxdZ7hy.5PE0Cm4iiGQ9FTquRQ1Bw7a8AuSxwxi', 100.00),
-('d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9', 'usuario4', '$2b$12$Twb/9rlaK5UJMHFcO2QO8eQtU7mqt3CRTUOPcfy8mnvrTZpObgdue', 30.25),
-('e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0', 'usuario5', '$2b$12$bY5rSSuQPUZz8bV3pKn0b.HKiSFmljLWYTuJqrD7.0ITvRCdCnFZS', 60.75),
-('f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1', 'admin', '$2b$12$FrRVXK7qp5K2k2tSTpWXdeIUgyVx3CXkcsA8wvr4vjJTTkmgWqTES', 999.99);
+-- Users: added nationality and discount columns
+INSERT INTO "user" (apiid, name, password, balance, nationality, discount) VALUES 
+('a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6', 'usuario1', '$2b$12$wvaPF93z53ByVUtgIyOkf.Se6wgbmoO7g7CtKCW1haThka1.Y51qi', 50.00, 'España', 0),
+('b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7', 'usuario2', '$2b$12$YYj0hAAJLXIPuKR//tWHZOO5cZ9uC4Z7VAJMLofZTFaiD7JUqq/2C', 75.50, 'España', 5),
+('c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8', 'usuario3', '$2b$12$XDPo9HUfvAjzodqxdZ7hy.5PE0Cm4iiGQ9FTquRQ1Bw7a8AuSxwxi', 100.00, 'España', 0),
+('d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9', 'usuario4', '$2b$12$Twb/9rlaK5UJMHFcO2QO8eQtU7mqt3CRTUOPcfy8mnvrTZpObgdue', 30.25, 'España', 0),
+('e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0', 'usuario5', '$2b$12$bY5rSSuQPUZz8bV3pKn0b.HKiSFmljLWYTuJqrD7.0ITvRCdCnFZS', 60.75, 'España', 10),
+('f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1', 'admin', '$2b$12$FrRVXK7qp5K2k2tSTpWXdeIUgyVx3CXkcsA8wvr4vjJTTkmgWqTES', 999.99, 'España', 0);
 
 -- Ratings
 INSERT INTO ratings ("user", movie, score, comment) VALUES 
@@ -82,13 +84,13 @@ INSERT INTO ratings ("user", movie, score, comment) VALUES
 (5, 11, 3, 'Entretenida pero predecible');
 
 
--- Carts
-INSERT INTO carts ("user") VALUES 
-(1),
-(2),
-(3),
-(4),
-(5);
+-- Carts (include price column)
+INSERT INTO carts ("user", price) VALUES 
+(1, 0.00),
+(2, 0.00),
+(3, 0.00),
+(4, 0.00),
+(5, 0.00);
 
 -- Carts_Movies (relación muchos a muchos entre carritos y películas)
 INSERT INTO carts_movies (cart, movie) VALUES 
