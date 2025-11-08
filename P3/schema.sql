@@ -27,7 +27,7 @@ CREATE TABLE "user"(
     apiid CHAR(32) NOT NULL UNIQUE,    -- Usamos CHAR(32) porque guardaremos el UID haciendo UID.hex()
     name VARCHAR(255) NOT NULL UNIQUE, -- El nombre de usuario debe ser unico
     password VARCHAR(255) NOT NULL, -- Almacenaremos el hash de la contraseña
-    balance REAL NOT NULL DEFAULT 0
+    balance DECIMAL(10,2) NOT NULL DEFAULT 0
     CHECK (balance >= 0)
 );
 

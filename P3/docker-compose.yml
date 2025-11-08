@@ -14,6 +14,7 @@ services:
       - ./actualiza.sql:/docker-entrypoint-initdb.d/2_actualiza.sql
       - ./triggers.sql:/docker-entrypoint-initdb.d/3_triggers.sql
       - ./populate.sql:/docker-entrypoint-initdb.d/4_populate.sql
+      - ./procedures.sql:/docker-entrypoint-initdb.d/5_procedures.sql
       - db_data:/var/lib/postgresql/data
   user:
     build:

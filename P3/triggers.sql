@@ -1,6 +1,6 @@
 -- Trigger para actualizar el stock de películas al añadir/quitar del carrito
 -- Función para validar el stock (BEFORE trigger)
-CREATE OR REPLACE FUNCTION validar_stock()
+CREATE OR REPLACE FUNCTION validate_stock()
 RETURNS trigger AS $$
     DECLARE movie_stock INT;
 BEGIN
@@ -19,7 +19,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Función para actualizar el stock (AFTER trigger)
-CREATE OR REPLACE FUNCTION actualizar_stock()
+CREATE OR REPLACE FUNCTION update_stock()
 RETURNS trigger AS $$
 BEGIN
     IF (TG_OP = 'INSERT') THEN
@@ -36,18 +36,18 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger para validar el stock antes de insertar
-CREATE TRIGGER trigger_validar_stock
+CREATE TRIGGER trigger_validate_stock
 BEFORE INSERT ON carts_movies
 FOR EACH ROW
-EXECUTE FUNCTION validar_stock();
+EXECUTE FUNCTION validate_stock();
 
 -- Trigger para actualizar el stock después de la operación
-CREATE TRIGGER trigger_actualizar_stock
+CREATE TRIGGER trigger_update_stock
 AFTER INSERT OR DELETE ON carts_movies
 FOR EACH ROW
-EXECUTE FUNCTION actualizar_stock();
+EXECUTE FUNCTION update_stock();
 
-CREATE OR REPLACE FUNCTION actualizar_precio_carrito()
+CREATE OR REPLACE FUNCTION update_cart_price()
 RETURNS trigger AS $$
 BEGIN
     -- Si se añade una película al carrito, aumentar el precio del carrito
@@ -65,15 +65,16 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
+$$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_actualizar_precio_carrito
+CREATE TRIGGER trigger_update_cart_price
 AFTER INSERT OR DELETE ON carts_movies
 FOR EACH ROW
-EXECUTE FUNCTION actualizar_precio_carrito();
+EXECUTE FUNCTION update_cart_price();
 
-CREATE OR REPLACE FUNCTION validar_balance_usuario()
+CREATE OR REPLACE FUNCTION validate_user_balance()
 RETURNS trigger AS $$
-DECLARE user_balance DECIMAL(10,2);
+    DECLARE user_balance DECIMAL(10,2);
 BEGIN
     -- Al crear una orden, validar que el usuario tiene suficiente balance
     IF (TG_OP = 'INSERT') THEN
@@ -89,14 +90,30 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION actualizar_balance_usuario()
+CREATE OR REPLACE FUNCTION create_user_cart()
+RETURNS trigger AS $$
+BEGIN
+    -- Al crear un usuario, crear su carrito asociado
+    IF (TG_OP = 'INSERT') THEN
+        INSERT INTO carts ("user", price) VALUES (NEW.userid, 0);
+        RETURN NEW;
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_create_user_cart
+AFTER INSERT ON "user"
+FOR EACH ROW
+EXECUTE FUNCTION create_user_cart();
+
+CREATE OR REPLACE FUNCTION update_user_balance()
 RETURNS trigger AS $$
 BEGIN
     -- Al crear una orden, reducir el balance del usuario
     IF (TG_OP = 'INSERT') THEN
         UPDATE "user"
-        IF balance < NEW.precio
-
+        SET balance = balance - NEW.precio
         WHERE userid = NEW."user";
         RETURN NEW;
     END IF;
@@ -104,17 +121,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_validar_balance_usuario
+CREATE TRIGGER trigger_validate_user_balance
 BEFORE INSERT ON "order"
 FOR EACH ROW
-EXECUTE FUNCTION validar_balance_usuario();
+EXECUTE FUNCTION validate_user_balance();
 
-CREATE TRIGGER trigger_actualizar_balance_usuario
+CREATE TRIGGER trigger_update_user_balance
 AFTER INSERT ON "order"
 FOR EACH ROW
-EXECUTE FUNCTION actualizar_balance_usuario();
+EXECUTE FUNCTION update_user_balance();
 
-CREATE OR REPLACE FUNCTION limpar_carrito()
+CREATE OR REPLACE FUNCTION clear_cart()
 RETURNS trigger AS $$
 BEGIN
     -- Al crear una orden, vaciar el carrito del usuario
@@ -138,12 +155,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_limpar_carrito
+CREATE TRIGGER trigger_clear_cart
 AFTER INSERT ON "order"
 FOR EACH ROW
-EXECUTE FUNCTION limpar_carrito();
+EXECUTE FUNCTION clear_cart();
 
-CREATE OR REPLACE FUNCTION actualizar_rating_pelicula()
+CREATE OR REPLACE FUNCTION update_movie_rating()
 RETURNS trigger AS $$
 DECLARE
     nueva_media DECIMAL(2,1);
@@ -172,9 +189,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_actualizar_rating_pelicula
+CREATE TRIGGER trigger_update_movie_rating
 AFTER INSERT OR UPDATE OR DELETE ON ratings
 FOR EACH ROW
-EXECUTE FUNCTION actualizar_rating_pelicula();
+EXECUTE FUNCTION update_movie_rating();
 
 

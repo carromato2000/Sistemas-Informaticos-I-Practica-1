@@ -15,21 +15,30 @@ database='si1'
 url_conexion=f'postgresql+asyncpg://{usuario}:{contraseña}@{host}:{port}/{database}'
 engine=create_async_engine(url_conexion, echo=True)
 
-async def validate_admin(uid: str):
+async def get_user_by_uid(uid: str):
     async with engine.connect() as conn:
         result = await conn.execute(text(
-            "SELECT * FROM \"user\" WHERE userid = :userid"
-        ), {"userid": uid})
+            "SELECT * FROM get_user_by_apiid(:apiid)"
+        ), {"apiid": uid})
         user = result.fetchone()
-        return user and user.name == 'admin'
+        if not user:
+            raise NotFoundError("User not found")
+        return dict(user._mapping)
+
+async def get_user_id(uid: str):
+    try:
+        user = await get_user_by_uid(uid)
+        return user.get("userid")
+    except NotFoundError:
+        raise NotFoundError("User not found")
     
-async def get_user_id(apiid: str):
-    async with engine.connect() as conn:
-        result = await conn.execute(text(
-            "SELECT userid FROM \"user\" WHERE apiid = :apiid"
-        ), {"apiid": apiid})
-        row = result.fetchone()
-        return row._mapping["userid"] if row else None
+async def validate_admin(uid: str):        
+    try:
+        user = await get_user_by_uid(uid)
+        return user.get("name") == "admin"
+    except NotFoundError:
+        return False
+
 
 async def get_movies(title = None, year = None, genre = None, actor = None):
     async with engine.connect() as conn:
@@ -207,112 +216,58 @@ async def get_carts(user):
             "WHERE carts.\"user\" = :user"
         ), {"user": user})
         return [dict(row._mapping) for row in result.fetchall()]
-    
-async def clear_cart(user):
-    async with engine.connect() as conn:
-        user= await get_user_id(user)
-        result= await conn.execute(text(
-            "SELECT cartid FROM carts WHERE \"user\" = :user"
-        ), {"user": user})
-        cart=result.fetchone()
-        if not cart:
-            return -1
-        
-        await conn.execute(text(
-            "DELETE FROM carts_movies WHERE cart = (SELECT cartid FROM carts WHERE \"user\" = :user)"
-        ), {"user": user})
-        await conn.execute(text(
-            "DELETE FROM carts WHERE \"user\" = :user"
-        ), {"user": user})
-        await conn.commit()
-        return 0
 
 async def add_movie_to_cart(user, movieid):
-    if movieid is None:
-        return False
     async with engine.connect() as conn:
         user= await get_user_id(user)
-        cart_check= await conn.execute(text(
+        cart= await conn.execute(text(
             "SELECT cartid FROM carts WHERE \"user\" = :user"
         ), {"user": user})
-        row=cart_check.fetchone()
-        if not row:
-            cart_check=await conn.execute(text(
-                "INSERT INTO carts (\"user\") VALUES (:user) RETURNING cartid"
-            ), {"user": user})
-            await conn.commit()
-            row=cart_check.fetchone()
-            
-        cartid=row._mapping["cartid"] if row else None
+        cart=cart.fetchone()
+        if not cart:
+            raise NotFoundError("Cart not found")
+        cartid=cart._mapping["cartid"]
         
         movie_in_cart= await conn.execute(text(
             "SELECT * FROM carts_movies WHERE cart = :cartid AND movie = :movieid"
         ), {"cartid": cartid, "movieid": movieid})
-        cart= movie_in_cart.fetchone()        
+        movie_in_cart= movie_in_cart.fetchone()        
             
-        if cart:
-            return False
+        if movie_in_cart:
+            raise AlreadyExistsError("Movie already in cart")
         else:
-            
-            await conn.execute(text(
+            result = await conn.execute(text(
                 "INSERT INTO carts_movies (cart, movie) VALUES (:cartid, :movieid)"
             ), {"cartid": cartid, "movieid": movieid})
             await conn.commit()
-            return True
 
 async def delete_movie_from_cart(user, movieid):
     async with engine.connect() as conn:
+        # Obterner el ID del usuario y del carrito
         user= await get_user_id(user)
-        cart_check= await conn.execute(text(
+        cart = await conn.execute(text(
             "SELECT cartid FROM carts WHERE \"user\" = :user"
         ), {"user": user})
-        cart=cart_check.fetchone()
+        cart=cart.fetchone()
         if not cart:
-            return False
-        cartid=cart._mapping["cartid"] if cart else None
+            raise NotFoundError("Cart not found")
+        
+        cartid=cart._mapping["cartid"]
         movie_in_cart= await conn.execute(text(
             "SELECT * FROM carts_movies WHERE cart = :cartid AND movie = :movieid"
         ), {"cartid": cartid, "movieid": movieid})
-        cart= movie_in_cart.fetchone()     
+        movie_in_cart = movie_in_cart.fetchone()     
         if not cart:
-            return False
+            raise NotFoundError("Movie not found in cart")
         else:
             await conn.execute(text(
                 "DELETE FROM carts_movies WHERE cart = :cartid AND movie = :movieid"
             ), {"cartid": cartid, "movieid": movieid})
-            
             await conn.commit()
-            return True
-        
-async def update_credit(userid: str, amount: float):
-    async with engine.connect() as conn:
-        userid= await get_user_id(userid)
-        result = await conn.execute(text(
-            "SELECT * FROM \"user\" WHERE userid = :userid"
-        ), {"userid": userid})
-        user = result.fetchone()
-        
-        if not user:
-            return -1
-        
-        new_balance = user.balance + amount
-        
-        await conn.execute(text(
-            "UPDATE \"user\" SET balance = :balance WHERE userid = :userid"
-        ), {"balance": new_balance, "userid": userid})
-        await conn.commit()
-        
-        return new_balance
 
 async def get_orders_by_userid(userid: str):
     async with engine.connect() as conn:
         userid= await get_user_id(userid)
-        user_data = await conn.execute(text(
-            "SELECT * FROM \"user\" WHERE userid = :userid"
-        ), {"userid": userid})
-        user = user_data.fetchone()
-        if not user:
-            return None
         result = await conn.execute(text(
             "SELECT o.orderid, o.creationDate AS \"creationDate\",o.precio "
             "FROM \"order\" o "
@@ -377,38 +332,23 @@ async def get_order_by_id(orderid: int):
         
         return order_details
     
-async def checkout_cart(user_id):
+async def checkout_cart(user_uid):
     async with engine.connect() as conn:
-        user_id= await get_user_id(user_id)
-        result = await conn.execute(text(
-            "SELECT * FROM \"user\" WHERE userid = :userid"
-        ), {"userid": user_id})
-        user = result.fetchone()
-        
+        # Obtener el usuario y su ID en la BD
+        user= await get_user_by_uid(user_uid)
         if not user:
-            return -1
-        
-        cart_result = await conn.execute(text(
-            "SELECT m.* FROM movie m "
-            "JOIN carts_movies c ON c.movie = m.movieid "
-            "JOIN carts cs ON c.cart = cs.cartid "
-            "WHERE cs.\"user\" = :user"
-        ), {"user": user_id})
-        cart_items = [dict(row._mapping) for row in cart_result.fetchall()]
-        
-        if not cart_items:
-            return -2
-        
-        total_cost = sum(item['price'] for item in cart_items)
-        
-        if user.balance < total_cost:
-            return -3
-        
-        new_balance = float(user.balance) - float(total_cost)
-        
-        await conn.execute(text(
-            "UPDATE \"user\" SET balance = :balance WHERE userid = :userid"
-        ), {"balance": new_balance, "userid": user_id})
+            raise NotFoundError("User not found")
+        user_id= user.get("userid")
+
+        # Obtener el carrito del usuario y su ID
+        cart= await conn.execute(text(
+            "SELECT * FROM carts WHERE \"user\" = :user_id"
+        ), {"user_id": user_id})
+        cart=cart.fetchone()
+        if not cart:
+            raise NotFoundError("Cart not found")
+        cartid=cart._mapping["cartid"]
+        total_cost = cart._mapping["price"]
         
         
         result=await conn.execute(text(
@@ -416,38 +356,8 @@ async def checkout_cart(user_id):
         ), {"user": user_id, "creationDate": datetime.now(), "precio": total_cost})
         row= result.fetchone()
         
-        
-        for item in cart_items:
-            await conn.execute(text(
-                "INSERT INTO orders_movies (\"order\", movie) "
-                "VALUES (:orderid, :movieid)"
-            ), {"orderid": row._mapping["orderid"], "movieid": item["movieid"]})
-            await conn.execute(text(
-                "DELETE FROM carts_movies WHERE movie = :movieid AND cart = (SELECT cartid FROM carts WHERE \"user\" = :user)"
-            ), {"movieid": item["movieid"], "user": user_id})
-        
-        await conn.execute(text(
-            "DELETE FROM carts WHERE \"user\" = :user"
-        ), {"user": user_id})
-        
+
         await conn.commit()
         
         return dict(row._mapping) if row else None
-    
-async def set_credit(userid: str, amount: float):
-    async with engine.connect() as conn:
-        userid= await get_user_id(userid)
-        result = await conn.execute(text(
-            "SELECT * FROM \"user\" WHERE userid = :userid"
-        ), {"userid": userid})
-        user = result.fetchone()
-        
-        if not user:
-            return -1
-        
-        await conn.execute(text(
-            "UPDATE \"user\" SET balance = :balance WHERE userid = :userid"
-        ), {"balance": amount, "userid": userid})
-        await conn.commit()
-        
-        return amount
+
