@@ -11,26 +11,30 @@ app = Quart(__name__)
 def validate_token():
     """
     Valida el token de autorización de la cabecera de la petición.
-    Retorna True si el token es válido, False en caso contrario.
+    Retorna el user_id si el token es válido, None en caso contrario.
     """
     auth_header = request.headers.get('Authorization')
     if not auth_header:
         return False
     
-    if auth_header.startswith('Bearer '):
-        auth_header = auth_header[7:]  # Elimina "Bearer "
-
-    try:
-        user_id , token = auth_header.split('.')
-    except ValueError:
+    if not auth_header.startswith('Bearer '):
         return False
+    auth_header = auth_header[7:]  # Elimina "Bearer "
+
+    auth_header = auth_header.split('.')
+    if len(auth_header) != 2:
+        return False
+    [userid , token] = auth_header
     
     # Genera el token esperado para este usuario
-    expected_token = str(uuid.uuid5(secret_uuid, str(user_id)))
+    expected_token = str(uuid.uuid5(secret_uuid, str(userid)))
     
-    return token == expected_token
+    if token == expected_token:
+        return userid
+    else:
+        return None
 
-@app.route('/user', methods=['PUT'])
+@app.route('/users', methods=['POST'])
 async def create_user():
     data=await request.get_json()
     name=data.get("name")
@@ -51,14 +55,13 @@ async def create_user():
     token = uid +'.'+str(uuid.uuid5(secret_uuid, str(user.userid)))
 
     body = {
-        "username": user.name,
         "uid": uid,
         "token": token
     }
 
     return jsonify(body), 200
 
-@app.route('/user', methods=['GET'])
+@app.route('/login', methods=['POST'])
 async def get_user():
     data = await request.get_json()
     name = data.get("name")
@@ -71,8 +74,8 @@ async def get_user():
     except InvalidCredentialsError:
         return jsonify({"error": "Invalid credentials"}), 401
     
-    uid = str(user.userid)
-    token = uid+'.'+str(uuid.uuid5(secret_uuid, str(user.userid)))
+    uid = str(user.apiid)
+    token = uid+'.'+str(uuid.uuid5(secret_uuid, uid))
 
     body = {
         "uid": uid,
@@ -81,63 +84,67 @@ async def get_user():
 
     return jsonify(body), 200
 
-@app.route('/user/<userid>', methods=['PATCH'])
+@app.route('/users/<userid>', methods=['PATCH'])
 async def update_password(userid):
     """
     Permitira cambiar la contrasena del usuario autenticado.
     """
-    if not validate_token():
-        return jsonify({"error": "Unauthorized"}), 401
-    auth_userid = request.headers.get('Authorization')[7:].split('.')[0]
-    if auth_userid != userid:
+    auth_userid = validate_token()
+    if auth_userid is None or auth_userid != userid:
         return jsonify({"error": "Unauthorized"}), 401
     
     data = await request.get_json()
     password=data.get("password")
     if not password:
-        return jsonify({"error": "New password data is empty"}), 404
+        return jsonify({"error": "New password data is empty"}), 400
+    if len(password)<4:
+        return jsonify({"error": "Password must be at least 4 characters"}), 400
     
     try:
-        await model.update_password(userid, (await data.get("password")))
+        await model.update_password(userid, password)
     except UserNotFoundError:
         return jsonify({"error": "User not found"}), 404
     
     return jsonify({"message": "Password updated successfully"}), 200
     
 
-@app.route('/user/<userid>', methods=['DELETE'])
+@app.route('/users/<userid>', methods=['DELETE'])
 async def delete_user(userid):
-    if not validate_token():
+    auth_userid = validate_token()
+    if auth_userid is None:
         return jsonify({"error": "Unauthorized"}), 401
-    headers = request.headers.get('Authorization')
-    calling_userid = headers.split(' ')[1].split('.')[0]
     try:
-        await model.delete_user(userid, calling_userid)
+        await model.delete_user(userid, auth_userid)
     except PermissionError:
         return jsonify({"error": "Unauthorized: Admin privileges required"}), 403
     except UserNotFoundError: 
         return jsonify({"error": "User not found"}), 404
     return jsonify({"message": "User deleted successfully"}), 200
 
-@app.route('/user/credit', methods=['POST'])
-async def add_credit():
-    if not validate_token():
+@app.route('/users/<userid>/balance', methods=['POST'])
+async def add_credit(userid):
+    # Validación del token
+    auth_userid = validate_token()
+    if auth_userid is None or auth_userid != userid:
         return jsonify({"error": "Unauthorized"}), 401
-    headers = request.headers.get('Authorization')
-    user_id = headers.split(' ')[1].split('.')[0]
 
     data= await request.get_json()
-    amount_data= data = data.get("amount")
-    if not amount_data:
-        return jsonify({"error": "Amount data is empty"}), 404 
+    amount = data.get("amount")
+    if not amount:
+        return jsonify({"error": "Amount data is empty"}), 400
     try:
-        amount = float(amount_data)
+        amount = float(amount)
     except ValueError:
         return jsonify({"error": "Amount must be a number"}), 400
     if amount <= 0:
         return jsonify({"error": "Amount must be positive"}), 400
-    
-    user= await model.update_credit(user_id, amount)
+    if round(amount, 2) != amount:
+        return jsonify({"error": "Amount must have at most two decimal places"}), 400
+
+    try:
+        user= await model.update_credit(userid, amount)
+    except UserNotFoundError:
+        return jsonify({"error": "User not found"}), 404
     return jsonify({"new_credit": f"{user.balance}"}), 200
 
 if __name__ == '__main__':

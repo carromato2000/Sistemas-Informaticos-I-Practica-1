@@ -97,15 +97,14 @@ async def delete_user(userid: str, calling_userid: str):
     async_session= sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     
     async with async_session() as session:
-        # Comprobar si el usuario que llama es admin
+        # Comprobar si el usuario que llama es admin       
+        if userid == calling_userid:
+            raise PermissionError()
         userid= await get_user_id(userid)
         user_is_admin=await session.execute(
-            select(User).where(and_(User.userid == calling_userid, User.name == 'admin'))
+            select(User).where(and_(User.apiid == calling_userid, User.name == 'admin'))
         )
         if not user_is_admin.scalars().first():
-            raise PermissionError()
-        
-        if userid == calling_userid:
             raise PermissionError()
         
         # Obtener el usuario por userid
@@ -159,8 +158,6 @@ async def update_credit(userid: str, amount:float):
             raise UserNotFoundError()
         
         user.balance += amount
-        if user.balance < 0:
-            raise ValueError("Insufficient balance")
         
         session.add(user)
         await session.commit()

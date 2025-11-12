@@ -10,8 +10,11 @@ services:
     ports:
       - "9999:5432"
     volumes:
-      - ./schema.sql:/docker-entrypoint-initdb.d/1_schema.sql
-      - ./populate.sql:/docker-entrypoint-initdb.d/2_populate.sql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/1_schema.sql
+      - ./database/actualiza.sql:/docker-entrypoint-initdb.d/2_actualiza.sql
+      - ./database/triggers.sql:/docker-entrypoint-initdb.d/3_triggers.sql
+      - ./database/populate.sql:/docker-entrypoint-initdb.d/4_populate.sql
+      - ./database/procedures.sql:/docker-entrypoint-initdb.d/5_procedures.sql
       - db_data:/var/lib/postgresql/data
   user:
     build:

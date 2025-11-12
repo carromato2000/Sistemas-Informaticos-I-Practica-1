@@ -133,13 +133,19 @@ EXECUTE FUNCTION update_user_balance();
 
 CREATE OR REPLACE FUNCTION clear_cart()
 RETURNS trigger AS $$
+DECLARE
+    cartid INT;
 BEGIN
     -- Al crear una orden, vaciar el carrito del usuario
     IF (TG_OP = 'INSERT') THEN
+        SELECT c.cartid INTO cartid
+        FROM carts c
+        WHERE c."user" = NEW."user"
+        LIMIT 1;
         BEGIN
             SET session_replication_role = 'replica';
             DELETE FROM carts_movies
-            WHERE cart = (SELECT cartid FROM carts WHERE "user" = NEW."user");
+            WHERE cart = cartid;
             UPDATE carts
             SET price = 0
             WHERE "user" = NEW."user";
