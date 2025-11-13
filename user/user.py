@@ -147,6 +147,18 @@ async def add_credit(userid):
         return jsonify({"error": "User not found"}), 404
     return jsonify({"new_credit": f"{user.balance}"}), 200
 
+@app.route('/clientesSinPedidos', methods=['GET'])
+async def clientes_sin_pedidos():
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    clients=await model.clientes_sin_pedidos()
+    if not clients:
+        return jsonify({"message": "No users without orders"}), 200
+    return jsonify({"message": f"{clients}"}),200
+        
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5050)
 

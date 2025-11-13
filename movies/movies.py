@@ -504,5 +504,11 @@ async def set_credit(amount):
     return jsonify({"new_credit": f"{current_balance}"}), 200
 
 
+
+
+#@app.route('/estadisticaVentas/<anio>/<pais>', methods=['POST'])
+#async def get_estadisticas(anio,pais):
+    
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5051)

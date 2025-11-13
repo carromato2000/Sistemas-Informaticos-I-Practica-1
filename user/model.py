@@ -164,3 +164,18 @@ async def update_credit(userid: str, amount:float):
         await session.refresh(user)
     
     return user
+
+async def clientes_sin_pedidos():
+    async_session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+    
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(
+                ~User.userid.in_(
+                    select(text("\"user\"")).select_from(text("\"order\""))
+                )
+            )
+        )
+        users = result.scalars().all()
+    
+    return users
