@@ -1,5 +1,5 @@
 CREATE OR REPLACE FUNCTION get_user_by_apiid(p_apiid CHAR(32))
-    RETURNS TABLE(userid INTEGER, name VARCHAR, balance REAL, nationality VARCHAR, discount INT) AS $$
+    RETURNS TABLE(userid INTEGER, name VARCHAR, balance numeric(10,2), nationality VARCHAR, discount INT) AS $$
     BEGIN
         RETURN QUERY
         SELECT u.userid, u.name, u.balance, u.nationality, u.discount

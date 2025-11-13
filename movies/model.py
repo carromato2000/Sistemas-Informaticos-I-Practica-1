@@ -359,5 +359,61 @@ async def checkout_cart(user_uid):
 
         await conn.commit()
         
-        return dict(row._mapping) if row else None
+        order_details={
+            "orderid": row._mapping["orderid"],
+            "creationDate": datetime.now()
+        }
+        
+        return order_details
+
+async def get_sales_statistics(year: int, country: str):
+    """
+    Retorna todas las ventas realizadas en un año determinado 
+    para los clientes de un país específico
+    """
+    async with engine.connect() as conn:
+        result = await conn.execute(text(
+            "SELECT o.orderid, o.creationDate, o.precio, u.userid, u.name, u.nationality "
+            "FROM \"order\" o "
+            "JOIN \"user\" u ON o.\"user\" = u.userid "
+            "WHERE EXTRACT(YEAR FROM o.creationDate) = :year "
+            "AND u.nationality = :country "
+            "ORDER BY o.creationDate DESC"
+        ), {"year": year, "country": country})
+        
+        orders = []
+        for row in result.fetchall():
+            order_details = {
+                "orderid": row._mapping["orderid"],
+                "creationDate": str(row._mapping["creationDate"]),
+                "total": float(row._mapping["precio"]),
+                "user": {
+                    "userid": row._mapping["userid"],
+                    "name": row._mapping["name"],
+                    "country": row._mapping["nationality"]
+                }
+            }
+            
+            # Obtener las películas de esta orden
+            movies_result = await conn.execute(text(
+                "SELECT m.movieid, m.title, m.year, m.genre, m.price "
+                "FROM movie m "
+                "JOIN orders_movies om ON m.movieid = om.movie "
+                "WHERE om.\"order\" = :orderid"
+            ), {"orderid": row._mapping["orderid"]})
+            
+            order_details["movies"] = [dict(movie_row._mapping) for movie_row in movies_result.fetchall()]
+            orders.append(order_details)
+        
+        # Calcular totales
+        total_sales = sum(order["total"] for order in orders)
+        total_orders = len(orders)
+        
+        return {
+            "year": year,
+            "country": country,
+            "total_sales": total_sales,
+            "total_orders": total_orders,
+            "orders": orders
+        }
 

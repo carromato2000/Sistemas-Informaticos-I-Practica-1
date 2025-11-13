@@ -35,6 +35,7 @@ async def get_movies():
     """
     Retorna una película o conjunto de películas del catálogo
     """
+    
     title = request.args.get('title')
     year = request.args.get('year')
     genre = request.args.get('genre')
@@ -62,7 +63,8 @@ async def rate_movie(movieid):
     except ValueError:
         return jsonify({"error": "Invalid movie ID format"}), 400
 
-    score = request.args.get('score')
+    data = await request.get_json()
+    score = data.get('score')
     if score is None:
         return jsonify({"error": "Score data is empty"}), 400
     try:
@@ -388,11 +390,13 @@ async def add_movie_to_cart(movieid):
         return jsonify({"error": "Invalid movie ID format"}), 400
     headers = request.headers.get('Authorization')
     userid = headers.split(' ')[1].split('.')[0]
-    movie_not_in_cart=await model.add_movie_to_cart(userid, int(movieid))
-    if not movie_not_in_cart:
-        return jsonify({"error": "Movie already in cart"}), 409
-    else:
+    try:
+        await model.add_movie_to_cart(userid, int(movieid))
         return jsonify({"message": "Movie added to cart"}), 200
+    except AlreadyExistsError as e:
+        return jsonify({"error": e.message}), 409
+    except NotFoundError as e:
+        return jsonify({"error": e.message}), 404
 
 @app.route('/cart/<movieid>', methods=['DELETE'])
 async def delete_movie_from_cart(movieid):
@@ -407,12 +411,11 @@ async def delete_movie_from_cart(movieid):
         return jsonify({"error": "Invalid movie ID format"}), 400
     headers = request.headers.get('Authorization')
     userid = headers.split(' ')[1].split('.')[0]
-    movie_in_cart=await model.delete_movie_from_cart(userid, int(movieid))
-    if not movie_in_cart:
-        return jsonify({"error": "Movie not in cart"}), 404
-    else:
+    try:
+        await model.delete_movie_from_cart(userid, int(movieid))
         return jsonify({"message": "Movie removed from cart"}), 200
-    
+    except NotFoundError as e:
+        return jsonify({"error": e.message}), 404
 
 @app.route('/cart/checkout', methods=['POST'])
 async def checkout_cart():
@@ -423,18 +426,18 @@ async def checkout_cart():
         return jsonify({"error": "Unauthorized"}), 401
     headers = request.headers.get('Authorization')
     userid = headers.split(' ')[1].split('.')[0]
-    order= await model.checkout_cart(userid)
+    order = await model.checkout_cart(userid)
     if order == -1:
         return jsonify({"error": "User not found"}), 404
     elif order == -2:
         return jsonify({"error": "Cart is empty"}), 404
     elif order == -3:
         return jsonify({"error": "Insufficient funds"}), 402
-    elif order.get("orderid") is None:
+    elif order is None:
         return jsonify({"error": "Order creation failed"}), 500
     else:
         return jsonify(order), 200
-    
+
 @app.route('/orders', methods=['GET'])
 async def get_orders():
     """
@@ -503,11 +506,13 @@ async def set_credit(amount):
     
     return jsonify({"new_credit": f"{current_balance}"}), 200
 
-
-
-
-#@app.route('/estadisticaVentas/<anio>/<pais>', methods=['POST'])
-#async def get_estadisticas(anio,pais):
+@app.route('/estadisticaVentas/<anio>/<pais>', methods=['GET'])
+async def get_estadisticas(anio,pais):
+    if not validate_token():
+        return jsonify({"error": "Unauthorized"}),401
+    statistics=await model.get_sales_statistics(anio,pais)
+    return jsonify(statistics),200
+    
     
 
 if __name__ == '__main__':

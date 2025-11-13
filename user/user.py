@@ -155,7 +155,19 @@ async def clientes_sin_pedidos():
     clients=await model.clientes_sin_pedidos()
     if not clients:
         return jsonify({"message": "No users without orders"}), 200
-    return jsonify({"message": f"{clients}"}),200
+    
+    # Convert User objects to dictionaries for JSON serialization
+    clients_list = [
+        {
+            "userid": client.userid,
+            "apiid": client.apiid,
+            "name": client.name,
+            "balance": client.balance
+        }
+        for client in clients
+    ]
+    
+    return jsonify(clients_list), 200
         
 
 
